@@ -11,11 +11,11 @@ interface Props {
   onSuccess: () => void
 }
 
-const emptyForm = {
-  title: '', department: '', location: '', location_type: 'hybrid' as const,
-  employment_type: 'full-time' as const, salary_min: '', salary_max: '',
-  description: '', required_skills: [] as string[], experience_level: 'mid' as const,
-  deadline: '', status: 'draft' as const
+const emptyForm: any = {
+  title: '', department: '', location: '', location_type: 'hybrid',
+  employment_type: 'full-time', salary_min: '', salary_max: '',
+  description: '', required_skills: [] as string[], experience_level: 'mid',
+  deadline: '', status: 'draft'
 }
 
 export default function JobForm({ job, onClose, onSuccess }: Props) {
