@@ -1,13 +1,28 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { supabase, Job } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import { Search, MapPin, Briefcase, Clock, DollarSign, Filter } from 'lucide-react'
+
+const PARISHES = [
+  'Clarendon', 'Hanover', 'Kingston', 'Manchester', 'Portland',
+  'St. Andrew', 'St. Ann', 'St. Catherine', 'St. Elizabeth',
+  'St. James', 'St. Mary', 'St. Thomas', 'Trelawny', 'Westmoreland'
+]
+
+const JOB_TYPES = [
+  { value: 'contract', label: 'Contract' },
+  { value: 'full-time', label: 'Full Time' },
+  { value: 'internship', label: 'Internship' },
+  { value: 'part-time', label: 'Part Time' },
+  { value: 'remote', label: 'Remote' },
+  { value: 'temporary', label: 'Temporary' },
+]
 
 export default function JobBoard() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
-  const [locationType, setLocationType] = useState('all')
+  const [locationFilter, setLocationFilter] = useState('all')
   const [employmentType, setEmploymentType] = useState('all')
   const [experienceLevel, setExperienceLevel] = useState('all')
 
@@ -16,7 +31,7 @@ export default function JobBoard() {
     queryFn: async () => {
       const { data, error } = await supabase.from('jobs').select('*').eq('status', 'active').order('created_at', { ascending: false })
       if (error) throw error
-      return data as Job[]
+      return data as any[]
     }
   })
 
@@ -29,8 +44,10 @@ export default function JobBoard() {
   })
 
   const filtered = jobs.filter(j => {
-    const matchSearch = j.title.toLowerCase().includes(search.toLowerCase()) || j.department.toLowerCase().includes(search.toLowerCase()) || j.description.toLowerCase().includes(search.toLowerCase())
-    const matchLocation = locationType === 'all' || j.location_type === locationType
+    const matchSearch = j.title.toLowerCase().includes(search.toLowerCase()) ||
+      j.department.toLowerCase().includes(search.toLowerCase()) ||
+      j.description.toLowerCase().includes(search.toLowerCase())
+    const matchLocation = locationFilter === 'all' || j.location === locationFilter
     const matchEmployment = employmentType === 'all' || j.employment_type === employmentType
     const matchExperience = experienceLevel === 'all' || j.experience_level === experienceLevel
     return matchSearch && matchLocation && matchEmployment && matchExperience
@@ -65,16 +82,31 @@ export default function JobBoard() {
         {/* Filters */}
         <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <Filter size={16} color="var(--text-muted)" />
-          {[
-            { label: 'Location', value: locationType, setter: setLocationType, options: [['all','All Locations'],['remote','Remote'],['hybrid','Hybrid'],['onsite','On-site']] },
-            { label: 'Type', value: employmentType, setter: setEmploymentType, options: [['all','All Types'],['full-time','Full-time'],['part-time','Part-time'],['contract','Contract']] },
-            { label: 'Level', value: experienceLevel, setter: setExperienceLevel, options: [['all','All Levels'],['entry','Entry'],['mid','Mid'],['senior','Senior'],['lead','Lead']] },
-          ].map(f => (
-            <select key={f.label} className="input" value={f.value} onChange={e => f.setter(e.target.value)} style={{ width: 'auto', minWidth: '140px' }}>
-              {f.options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-            </select>
-          ))}
-          <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: '0.875rem' }}>{filtered.length} open position{filtered.length !== 1 ? 's' : ''}</span>
+
+          {/* Location filter - Jamaican parishes */}
+          <select className="input" value={locationFilter} onChange={e => setLocationFilter(e.target.value)} style={{ width: 'auto', minWidth: '180px' }}>
+            <option value="all">Select Job Location</option>
+            {PARISHES.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+
+          {/* Job type filter */}
+          <select className="input" value={employmentType} onChange={e => setEmploymentType(e.target.value)} style={{ width: 'auto', minWidth: '160px' }}>
+            <option value="all">Select Job Type</option>
+            {JOB_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+
+          {/* Experience level filter */}
+          <select className="input" value={experienceLevel} onChange={e => setExperienceLevel(e.target.value)} style={{ width: 'auto', minWidth: '150px' }}>
+            <option value="all">All Levels</option>
+            <option value="entry">Entry</option>
+            <option value="mid">Mid</option>
+            <option value="senior">Senior</option>
+            <option value="lead">Lead</option>
+          </select>
+
+          <span style={{ marginLeft: 'auto', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            {filtered.length} open position{filtered.length !== 1 ? 's' : ''}
+          </span>
         </div>
 
         {isLoading ? (
@@ -96,12 +128,16 @@ export default function JobBoard() {
                     <h2 style={{ fontSize: '1.0625rem', fontWeight: '600', marginBottom: '0.375rem' }}>{job.title}</h2>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><Briefcase size={13} />{job.department}</span>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><MapPin size={13} />{job.location} · <span style={{ textTransform: 'capitalize' }}>{job.location_type}</span></span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><MapPin size={13} />{job.location}</span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><Clock size={13} /><span style={{ textTransform: 'capitalize' }}>{job.employment_type}</span></span>
                       {(job.salary_min || job.salary_max) && (
                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                           <DollarSign size={13} />
-                          {job.salary_min && job.salary_max ? `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}` : job.salary_min ? `From $${job.salary_min.toLocaleString()}` : `Up to $${job.salary_max?.toLocaleString()}`}
+                          {job.salary_min && job.salary_max
+                            ? `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`
+                            : job.salary_min
+                              ? `From $${job.salary_min.toLocaleString()}`
+                              : `Up to $${job.salary_max?.toLocaleString()}`}
                         </span>
                       )}
                     </div>
@@ -110,17 +146,20 @@ export default function JobBoard() {
                     <span className={`badge ${job.experience_level === 'entry' ? 'badge-green' : job.experience_level === 'mid' ? 'badge-blue' : job.experience_level === 'senior' ? 'badge-purple' : 'badge-yellow'}`} style={{ textTransform: 'capitalize' }}>
                       {job.experience_level}
                     </span>
-                    <button className="btn-primary" style={{ padding: '0.375rem 1rem', fontSize: '0.8125rem' }} onClick={e => { e.stopPropagation(); navigate(`/jobs/${job.id}`) }}>
+                    <button className="btn-primary" style={{ padding: '0.375rem 1rem', fontSize: '0.8125rem' }}
+                      onClick={e => { e.stopPropagation(); navigate(`/jobs/${job.id}`) }}>
                       Apply Now
                     </button>
                   </div>
                 </div>
                 {job.required_skills?.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginTop: '0.875rem' }}>
-                    {job.required_skills.slice(0, 5).map(s => (
+                    {job.required_skills.slice(0, 5).map((s: string) => (
                       <span key={s} style={{ background: 'rgba(37,99,235,0.1)', color: '#3b82f6', borderRadius: '5px', padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>{s}</span>
                     ))}
-                    {job.required_skills.length > 5 && <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>+{job.required_skills.length - 5} more</span>}
+                    {job.required_skills.length > 5 && (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>+{job.required_skills.length - 5} more</span>
+                    )}
                   </div>
                 )}
                 {job.deadline && (
