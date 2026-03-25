@@ -55,7 +55,10 @@ export default function Layout({ children }: { children: ReactNode }) {
         {/* Logo */}
         <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.75rem', minHeight: '64px' }}>
           {settings?.company_logo ? (
-            <img src={settings.company_logo} alt="Company Logo" style={{ maxHeight: '44px', maxWidth: '180px', objectFit: 'contain' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <img src={settings.company_logo} alt="Company Logo" style={{ maxHeight: '36px', maxWidth: '160px', objectFit: 'contain' }} />
+              <div style={{ fontSize: '0.65rem', color: 'var(--blue-400)', fontWeight: '600', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Recruitment Hub</div>
+            </div>
           ) : (
             <>
               <div style={{ width: '36px', height: '36px', background: 'var(--blue-500)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -63,7 +66,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               </div>
               <div>
                 <div style={{ fontSize: '0.875rem', fontWeight: '700', color: 'var(--text-primary)', lineHeight: 1.2 }}>{settings?.company_name || 'ATS Platform'}</div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Recruitment System</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--blue-400)', fontWeight: '600', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Recruitment Hub</div>
               </div>
             </>
           )}
