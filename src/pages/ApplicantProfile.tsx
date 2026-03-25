@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { sendStatusEmail } from '../lib/email'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Mail, Phone, FileText, Star, Tag, Plus, X, Download, Calendar } from 'lucide-react'
 import ScheduleInterview from '../components/ScheduleInterview'
@@ -109,8 +110,15 @@ export default function ApplicantProfile() {
     mutationFn: async (status: string) => {
       const { error } = await supabase.from('applications').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
       if (error) throw error
+      // Send email notification
+      const email = app?.applicant_details?.email
+      const name = app?.applicant_details?.full_name
+      const jobTitle = app?.job?.title
+      if (email && name && jobTitle) {
+        await sendStatusEmail(status, email, name, jobTitle, id!)
+      }
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['application', id] }); toast.success('Status updated') }
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['application', id] }); toast.success('Status updated & email sent') }
   })
 
   if (isLoading) return <div style={{ padding: '3rem', textAlign: 'center' }}><span className="spinner" /></div>
