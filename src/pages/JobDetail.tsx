@@ -88,7 +88,18 @@ export default function JobDetail() {
       })
       if (detailsError) throw detailsError
     },
-    onSuccess: () => { setSubmitted(true); toast.success('Application submitted!') },
+    onSuccess: async () => {
+      // Send password reset email so applicant can set their password and access portal
+      try {
+        await supabase.auth.resetPasswordForEmail(form.email, {
+          redirectTo: `${window.location.origin}/reset-password`
+        })
+      } catch (e) {
+        // Non-blocking - application still submitted successfully
+      }
+      setSubmitted(true)
+      toast.success('Application submitted!')
+    },
     onError: (err: any) => toast.error(err.message || 'Submission failed'),
     onSettled: () => setUploading(false)
   })
@@ -103,10 +114,19 @@ export default function JobDetail() {
 
   if (submitted) return (
     <div style={{ minHeight: '100vh', background: 'var(--navy-950)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="card" style={{ maxWidth: '480px', textAlign: 'center', padding: '3rem' }}>
+      <div className="card" style={{ maxWidth: '520px', textAlign: 'center', padding: '3rem' }}>
         <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎉</div>
         <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.75rem' }}>Application Submitted!</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Thank you for applying for <strong>{job.title}</strong>. We'll review your application and be in touch shortly.</p>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.7 }}>
+          Thank you for applying for <strong>{job.title}</strong>. We'll review your application and be in touch shortly.
+        </p>
+        <div style={{ background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: '10px', padding: '1rem', marginBottom: '1.5rem', textAlign: 'left' }}>
+          <div style={{ fontWeight: '600', color: 'var(--blue-400)', marginBottom: '0.5rem', fontSize: '0.9375rem' }}>📧 Check your email!</div>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
+            We sent a link to <strong>{form.email}</strong> to set up your applicant portal password. 
+            Once set, you can log in to track your application status and upload any requested documents.
+          </p>
+        </div>
         <button className="btn-primary" onClick={() => navigate('/jobs')}>View More Jobs</button>
       </div>
     </div>
