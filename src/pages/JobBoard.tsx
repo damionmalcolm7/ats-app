@@ -60,10 +60,16 @@ export default function JobBoard() {
       {/* Header */}
       <div style={{ background: 'var(--navy-900)', borderBottom: '1px solid var(--border)', padding: '1rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: '36px', height: '36px', background: 'var(--blue-500)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Briefcase size={18} color="white" />
-          </div>
-          <span style={{ fontWeight: '700', fontSize: '1.125rem' }}>{companyName}</span>
+          {settings?.company_logo ? (
+            <img src={settings.company_logo} alt={companyName} style={{ maxHeight: '44px', maxWidth: '200px', objectFit: 'contain' }} />
+          ) : (
+            <>
+              <div style={{ width: '36px', height: '36px', background: 'var(--blue-500)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Briefcase size={18} color="white" />
+              </div>
+              <span style={{ fontWeight: '700', fontSize: '1.125rem' }}>{companyName}</span>
+            </>
+          )}
         </div>
         <button className="btn-secondary" onClick={() => navigate('/login')} style={{ fontSize: '0.8125rem' }}>Sign In</button>
       </div>
