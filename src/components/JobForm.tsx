@@ -91,13 +91,34 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
 
           <div className="form-row">
             <div className="form-group">
-              <label className="label">Location</label>
-              <input className="input" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} placeholder="e.g. Kingston, Jamaica" />
+              <label className="label">Location (Parish)</label>
+              <select className="input" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })}>
+                <option value="">Select Parish</option>
+                <option value="Clarendon">Clarendon</option>
+                <option value="Hanover">Hanover</option>
+                <option value="Kingston">Kingston</option>
+                <option value="Manchester">Manchester</option>
+                <option value="Portland">Portland</option>
+                <option value="St. Andrew">St. Andrew</option>
+                <option value="St. Ann">St. Ann</option>
+                <option value="St. Catherine">St. Catherine</option>
+                <option value="St. Elizabeth">St. Elizabeth</option>
+                <option value="St. James">St. James</option>
+                <option value="St. Mary">St. Mary</option>
+                <option value="St. Thomas">St. Thomas</option>
+                <option value="Trelawny">Trelawny</option>
+                <option value="Westmoreland">Westmoreland</option>
+              </select>
             </div>
             <div className="form-group">
               <label className="label">Location Type</label>
               <select className="input" value={form.location_type} onChange={e => setForm({ ...form, location_type: e.target.value as any })}>
-                <option value="onsite">On-site</option>
+                <option value="contract">Contract</option>
+                <option value="full-time">Full Time</option>
+                <option value="internship">Internship</option>
+                <option value="part-time">Part Time</option>
+                <option value="remote">Remote</option>
+                <option value="temporary">Temporary</option>
                 <option value="remote">Remote</option>
                 <option value="hybrid">Hybrid</option>
               </select>
@@ -108,9 +129,12 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
             <div className="form-group">
               <label className="label">Employment Type</label>
               <select className="input" value={form.employment_type} onChange={e => setForm({ ...form, employment_type: e.target.value as any })}>
-                <option value="full-time">Full-time</option>
-                <option value="part-time">Part-time</option>
                 <option value="contract">Contract</option>
+                <option value="full-time">Full Time</option>
+                <option value="internship">Internship</option>
+                <option value="part-time">Part Time</option>
+                <option value="remote">Remote</option>
+                <option value="temporary">Temporary</option>
               </select>
             </div>
             <div className="form-group">
