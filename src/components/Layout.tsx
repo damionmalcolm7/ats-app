@@ -1,4 +1,6 @@
 import { ReactNode, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '../lib/supabase'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -20,6 +22,14 @@ const navItems = [
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth()
+
+  const { data: settings } = useQuery({
+    queryKey: ['settings'],
+    queryFn: async () => {
+      const { data } = await supabase.from('app_settings').select('*').single()
+      return data
+    }
+  })
   const navigate = useNavigate()
   const location = useLocation()
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -43,14 +53,20 @@ export default function Layout({ children }: { children: ReactNode }) {
         display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 30
       }}>
         {/* Logo */}
-        <div style={{ padding: '1.25rem 1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: '36px', height: '36px', background: 'var(--blue-500)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Briefcase size={18} color="white" />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.875rem', fontWeight: '700', color: 'var(--text-primary)', lineHeight: 1.2 }}>ATS Platform</div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Recruitment System</div>
-          </div>
+        <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.75rem', minHeight: '64px' }}>
+          {settings?.company_logo ? (
+            <img src={settings.company_logo} alt="Company Logo" style={{ maxHeight: '44px', maxWidth: '180px', objectFit: 'contain' }} />
+          ) : (
+            <>
+              <div style={{ width: '36px', height: '36px', background: 'var(--blue-500)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Briefcase size={18} color="white" />
+              </div>
+              <div>
+                <div style={{ fontSize: '0.875rem', fontWeight: '700', color: 'var(--text-primary)', lineHeight: 1.2 }}>{settings?.company_name || 'ATS Platform'}</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Recruitment System</div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Nav */}
