@@ -113,21 +113,39 @@ export default function JobDetail() {
   if (!job) return <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', minHeight: '100vh', background: 'var(--navy-950)' }}>Job not found</div>
 
   if (submitted) return (
-    <div style={{ minHeight: '100vh', background: 'var(--navy-950)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--navy-950)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
       <div className="card" style={{ maxWidth: '520px', textAlign: 'center', padding: '3rem' }}>
-        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🎉</div>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.75rem' }}>Application Submitted!</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.7 }}>
-          Thank you for applying for <strong>{job.title}</strong>. We'll review your application and be in touch shortly.
+        {/* Checkmark icon */}
+        <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'rgba(16,185,129,0.15)', border: '2px solid #10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+
+        <h2 style={{ fontSize: '1.625rem', fontWeight: '700', marginBottom: '0.75rem', color: 'var(--text-primary)' }}>
+          Application Submitted
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: 1.7, fontSize: '0.9375rem' }}>
+          Thank you for applying for <strong style={{ color: 'var(--text-primary)' }}>{job.title}</strong> at {settings?.company_name || 'our company'}. Your application has been received and is currently under review.
         </p>
-        <div style={{ background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.3)', borderRadius: '10px', padding: '1rem', marginBottom: '1.5rem', textAlign: 'left' }}>
-          <div style={{ fontWeight: '600', color: 'var(--blue-400)', marginBottom: '0.5rem', fontSize: '0.9375rem' }}>📧 Check your email!</div>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
-            We sent a link to <strong>{form.email}</strong> to set up your applicant portal password. 
-            Once set, you can log in to track your application status and upload any requested documents.
+
+        <div style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: '10px', padding: '1.125rem 1.25rem', marginBottom: '2rem', textAlign: 'left' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.5rem', fontSize: '0.9375rem' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+            </svg>
+            Next Steps
+          </div>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.7, margin: 0 }}>
+            A confirmation has been sent to <strong style={{ color: 'var(--text-primary)' }}>{form.email}</strong>. 
+            Please check your inbox for a link to set up your applicant portal where you can track your application status and respond to any document requests.
           </p>
         </div>
-        <button className="btn-primary" onClick={() => navigate('/jobs')}>View More Jobs</button>
+
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+          <button className="btn-secondary" onClick={() => navigate('/jobs')}>View More Jobs</button>
+          <button className="btn-primary" onClick={() => navigate('/login')}>Go to Portal</button>
+        </div>
       </div>
     </div>
   )
