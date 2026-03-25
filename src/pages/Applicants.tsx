@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase, Application } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
+import { sendStatusEmail } from '../lib/email'
 import toast from 'react-hot-toast'
 import { Search, Filter, Eye, Mail, Star } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
@@ -38,11 +39,15 @@ export default function Applicants() {
   })
 
   const statusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string, status: string }) => {
+    mutationFn: async ({ id, status, applicantEmail, applicantName, jobTitle }: { id: string, status: string, applicantEmail?: string, applicantName?: string, jobTitle?: string }) => {
       const { error } = await supabase.from('applications').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
       if (error) throw error
+      // Send email notification
+      if (applicantEmail && applicantName && jobTitle) {
+        await sendStatusEmail(status, applicantEmail, applicantName, jobTitle, id)
+      }
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['applications'] }); toast.success('Status updated') },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['applications'] }); toast.success('Status updated & email sent') },
     onError: (err: any) => toast.error(err.message)
   })
 
@@ -154,7 +159,7 @@ export default function Applicants() {
                     <td>
                       <select
                         value={app.status}
-                        onChange={e => statusMutation.mutate({ id: app.id, status: e.target.value })}
+                        onChange={e => statusMutation.mutate({ id: app.id, status: e.target.value, applicantEmail: app.applicant_details?.email, applicantName: app.applicant_details?.full_name, jobTitle: app.job?.title })}
                         className={`badge ${statusColors[app.status]}`}
                         style={{ background: 'transparent', border: 'none', cursor: 'pointer', outline: 'none', textTransform: 'capitalize' }}>
                         {['applied','screening','interview','assessment','offer','hired','rejected'].map(s => (
