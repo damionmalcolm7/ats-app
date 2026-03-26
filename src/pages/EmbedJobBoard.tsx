@@ -42,35 +42,29 @@ export default function EmbedJobBoard() {
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', background: '#f8fafc', minHeight: '100vh' }}>
       {/* Header */}
-      <div style={{ background: '#1B3A6B', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          {settings?.company_logo ? (
-            <img src={settings.company_logo} alt={settings.company_name} style={{ maxHeight: '40px', maxWidth: '160px', objectFit: 'contain' }} />
-          ) : (
-            <span style={{ color: 'white', fontWeight: '700', fontSize: '1.125rem' }}>{settings?.company_name || 'Careers'}</span>
-          )}
-        </div>
-        <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem' }}>{filtered.length} open position{filtered.length !== 1 ? 's' : ''}</span>
+      <div style={{ background: '#1B3A6B', padding: '0.875rem 1.5rem' }}>
+        <h2 style={{ color: 'white', fontWeight: '700', fontSize: '1.125rem', margin: 0 }}>Current Vacancies</h2>
+        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8125rem', margin: '0.125rem 0 0' }}>{filtered.length} open position{filtered.length !== 1 ? 's' : ''} available</p>
       </div>
 
       {/* Search & Filters */}
       <div style={{ background: 'white', padding: '1rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', gap: '0.625rem', flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: 1, minWidth: '180px' }}>
-          <Search size={14} style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+          <Search size={14} style={{ position: 'absolute', left: '0.625rem', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search jobs..."
-            style={{ width: '100%', padding: '0.5rem 0.625rem 0.5rem 2rem', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.8125rem', outline: 'none', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '0.5rem 0.625rem 0.5rem 2rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.8125rem', outline: 'none', boxSizing: 'border-box', color: '#1e293b', background: 'white' }}
           />
         </div>
         <select value={locationFilter} onChange={e => setLocationFilter(e.target.value)}
-          style={{ padding: '0.5rem 0.625rem', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.8125rem', background: 'white', outline: 'none', minWidth: '150px' }}>
-          {PARISHES.map(p => <option key={p} value={p}>{p === 'all' ? 'All Locations' : p}</option>)}
+          style={{ padding: '0.5rem 0.625rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.8125rem', background: 'white', color: '#1e293b', outline: 'none', minWidth: '150px' }}>
+          {PARISHES.map(p => <option key={p} value={p} style={{ color: '#1e293b' }}>{p === 'all' ? 'All Locations' : p}</option>)}
         </select>
         <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-          style={{ padding: '0.5rem 0.625rem', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.8125rem', background: 'white', outline: 'none', minWidth: '140px' }}>
-          {JOB_TYPES.map(t => <option key={t} value={t}>{t === 'all' ? 'All Types' : t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+          style={{ padding: '0.5rem 0.625rem', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '0.8125rem', background: 'white', color: '#1e293b', outline: 'none', minWidth: '140px' }}>
+          {JOB_TYPES.map(t => <option key={t} value={t} style={{ color: '#1e293b' }}>{t === 'all' ? 'All Types' : t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
         </select>
       </div>
 
