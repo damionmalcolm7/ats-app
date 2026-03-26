@@ -260,9 +260,15 @@ export default function ApplicantProfile() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div className="card">
                 <h3 style={{ fontWeight: '600', marginBottom: '0.875rem' }}>Cover Letter</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.7 }}>
-                  {app.cover_letter || <em style={{ color: 'var(--text-muted)' }}>No cover letter provided</em>}
-                </p>
+                {app.cover_letter ? (
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+                    {app.cover_letter.split('\n').map((line: string, i: number) => (
+                      <span key={i}>{line}<br /></span>
+                    ))}
+                  </div>
+                ) : (
+                  <em style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No cover letter provided</em>
+                )}
               </div>
               {details?.work_history?.length > 0 && (
                 <div className="card">
