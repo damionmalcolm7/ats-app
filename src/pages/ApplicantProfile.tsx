@@ -121,15 +121,35 @@ export default function ApplicantProfile() {
     mutationFn: async (status: string) => {
       const { error } = await supabase.from('applications').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
       if (error) throw error
-      // Send email notification
-      const email = app?.applicant_details?.email
-      const name = app?.applicant_details?.full_name
-      const jobTitle = app?.job?.title
+
+      // Fetch fresh applicant details to ensure we have the email
+      const { data: details } = await supabase
+        .from('applicant_details')
+        .select('full_name, email')
+        .eq('application_id', id)
+        .single()
+
+      const { data: jobData } = await supabase
+        .from('jobs')
+        .select('title')
+        .eq('id', app?.job_id)
+        .single()
+
+      const email = details?.email
+      const name = details?.full_name
+      const jobTitle = jobData?.title || app?.job?.title
+
+      console.log('Sending email to:', email, 'name:', name, 'job:', jobTitle, 'status:', status)
+
       if (email && name && jobTitle) {
-        await sendStatusEmail(status, email, name, jobTitle, id!)
+        const result = await sendStatusEmail(status, email, name, jobTitle, id!)
+        console.log('Email result:', result)
+      } else {
+        console.log('Missing data - email:', email, 'name:', name, 'job:', jobTitle)
       }
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['application', id] }); toast.success('Status updated & email sent') }
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['application', id] }); toast.success('Status updated & email sent') },
+    onError: (err: any) => toast.error(err.message)
   })
 
   if (isLoading) return <div style={{ padding: '3rem', textAlign: 'center' }}><span className="spinner" /></div>
