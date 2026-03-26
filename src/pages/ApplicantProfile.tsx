@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { sendStatusEmail } from '../lib/email'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Mail, Phone, FileText, Star, Tag, Plus, X, Download, Calendar } from 'lucide-react'
+import { ArrowLeft, Mail, Phone, FileText, Star, Tag, Plus, X, Download, Calendar, Upload } from 'lucide-react'
 import ScheduleInterview from '../components/ScheduleInterview'
 import SendEmailModal from '../components/SendEmailModal'
 import RequestDocument from '../components/RequestDocument'
@@ -370,14 +370,22 @@ export default function ApplicantProfile() {
                     <FileText size={18} color="var(--text-secondary)" />
                     <div>
                       <div style={{ fontWeight: '500', fontSize: '0.875rem' }}>{doc.name}</div>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{doc.type}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'capitalize' }}>{doc.type}</div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span className={`badge ${doc.status === 'signed' ? 'badge-green' : doc.status === 'uploaded' ? 'badge-blue' : doc.status === 'declined' ? 'badge-red' : 'badge-yellow'}`} style={{ textTransform: 'capitalize' }}>
                       {doc.status}
                     </span>
-                    {doc.file_url && <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}><Download size={12} /></a>}
+                    {/* HR can upload document on behalf */}
+                    {doc.status === 'pending' && (
+                      <HRDocUploader doc={doc} onUploaded={() => queryClient.invalidateQueries({ queryKey: ['documents', id] })} />
+                    )}
+                    {doc.file_url && (
+                      <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}>
+                        <Download size={12} />
+                      </a>
+                    )}
                   </div>
                 </div>
               ))}
@@ -434,5 +442,39 @@ function CoverLetter({ text }: { text: string }) {
         <p key={i} style={{ marginBottom: '0.75rem' }}>{para.trim()}</p>
       ))}
     </div>
+  )
+}
+
+function HRDocUploader({ doc, onUploaded }: { doc: any, onUploaded: () => void }) {
+  const [uploading, setUploading] = useState(false)
+
+  async function uploadFile(file: File) {
+    setUploading(true)
+    try {
+      const fileName = `docs/${doc.application_id}/${Date.now()}-${file.name}`
+      const { error: uploadError } = await supabase.storage.from('documents').upload(fileName, file)
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(fileName)
+      await supabase.from('documents').update({
+        file_url: publicUrl,
+        status: 'uploaded',
+        uploaded_at: new Date().toISOString()
+      }).eq('id', doc.id)
+      onUploaded()
+      toast.success('Document uploaded!')
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <label style={{ cursor: 'pointer' }}>
+      <input type="file" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadFile(f) }} />
+      <span className="btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+        {uploading ? <span className="spinner" /> : <><Upload size={12} /> Upload</>}
+      </span>
+    </label>
   )
 }
