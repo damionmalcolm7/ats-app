@@ -377,7 +377,6 @@ export default function ApplicantProfile() {
                     <span className={`badge ${doc.status === 'signed' ? 'badge-green' : doc.status === 'uploaded' ? 'badge-blue' : doc.status === 'declined' ? 'badge-red' : 'badge-yellow'}`} style={{ textTransform: 'capitalize' }}>
                       {doc.status}
                     </span>
-                    {/* HR can upload document on behalf */}
                     {doc.status === 'pending' && (
                       <HRDocUploader doc={doc} onUploaded={() => queryClient.invalidateQueries({ queryKey: ['documents', id] })} />
                     )}
@@ -386,6 +385,18 @@ export default function ApplicantProfile() {
                         <Download size={12} />
                       </a>
                     )}
+                    <button
+                      onClick={async () => {
+                        if (confirm(`Delete "${doc.name}"?`)) {
+                          await supabase.from('documents').delete().eq('id', doc.id)
+                          queryClient.invalidateQueries({ queryKey: ['documents', id] })
+                          toast.success('Document deleted')
+                        }
+                      }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: '0.25rem' }}
+                      title="Delete document">
+                      <X size={15} />
+                    </button>
                   </div>
                 </div>
               ))}
