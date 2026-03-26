@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid } from 'recharts'
 import { FileText, Download, Filter, Search } from 'lucide-react'
 import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
+import 'jspdf-autotable'
 import html2canvas from 'html2canvas'
 
 const COLORS = ['#2563eb','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4']
@@ -178,7 +178,7 @@ export default function Analytics() {
         startY = 30
       }
 
-      autoTable(doc, {
+      (doc as any).autoTable({
         startY,
         head: [['Applicant Name', 'Email', 'Job Title', 'Department', 'Location', 'Type', 'Status', 'Match Score', 'Applied Date']],
         body: reportData.map(r => [
