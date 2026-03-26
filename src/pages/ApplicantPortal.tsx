@@ -27,13 +27,25 @@ export default function ApplicantPortal() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('applications')
-        .select(`*, job:jobs(title, department, location, location_type), applicant_details(full_name), documents(id, name, status, file_url, type)`)
+        .select(`*, job:jobs(title, department, location, location_type), applicant_details(full_name)`)
         .eq('applicant_id', profile?.user_id)
         .order('created_at', { ascending: false })
       if (error) throw error
-      return data as any[]
+
+      // Fetch documents separately to always get fresh data
+      const enriched = await Promise.all((data || []).map(async (app) => {
+        const { data: docs } = await supabase
+          .from('documents')
+          .select('*')
+          .eq('application_id', app.id)
+          .order('created_at', { ascending: false })
+        return { ...app, documents: docs || [] }
+      }))
+
+      return enriched as any[]
     },
-    enabled: !!profile
+    enabled: !!profile,
+    refetchInterval: 30000 // Refresh every 30 seconds
   })
 
   async function handleSignOut() {
@@ -129,14 +141,34 @@ export default function ApplicantPortal() {
                   )}
                 </div>
 
-                {/* Pending documents */}
-                {app.documents?.filter((d: any) => d.status === 'pending').length > 0 && (
-                  <div style={{ marginTop: '0.875rem', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', padding: '0.75rem' }}>
-                    <div style={{ fontSize: '0.8125rem', fontWeight: '600', color: '#f59e0b', marginBottom: '0.625rem' }}>
-                      Action Required — Documents Needed
+                {/* All documents */}
+                {app.documents?.length > 0 && (
+                  <div style={{ marginTop: '0.875rem', background: 'var(--navy-700)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.75rem' }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.625rem' }}>
+                      Documents
                     </div>
-                    {app.documents.filter((d: any) => d.status === 'pending').map((doc: any) => (
-                      <DocumentUploader key={doc.id} doc={doc} applicationId={app.id} />
+                    {app.documents.map((doc: any) => (
+                      <div key={doc.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', padding: '0.5rem', background: 'var(--navy-800)', borderRadius: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                          <span style={{ fontWeight: '500' }}>{doc.name}</span>
+                          {doc.required && <span style={{ color: '#ef4444', fontSize: '0.7rem' }}>*Required</span>}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span className={`badge ${doc.status === 'signed' ? 'badge-green' : doc.status === 'uploaded' ? 'badge-blue' : 'badge-yellow'}`} style={{ fontSize: '0.7rem', textTransform: 'capitalize' }}>
+                            {doc.status}
+                          </span>
+                          {doc.file_url && (
+                            <a href={doc.file_url} target="_blank" rel="noopener noreferrer"
+                              style={{ background: 'var(--blue-500)', color: 'white', borderRadius: '5px', padding: '0.25rem 0.75rem', fontSize: '0.75rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                              ↓ Download
+                            </a>
+                          )}
+                          {doc.status === 'pending' && !doc.file_url && (
+                            <DocumentUploader doc={doc} applicationId={app.id} onUploaded={() => {}} />
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
@@ -149,7 +181,7 @@ export default function ApplicantPortal() {
   )
 }
 
-function DocumentUploader({ doc, applicationId }: { doc: any, applicationId: string }) {
+function DocumentUploader({ doc, applicationId, onUploaded }: { doc: any, applicationId: string, onUploaded?: () => void }) {
   const [uploading, setUploading] = useState(false)
   const [uploaded, setUploaded] = useState(doc.status !== 'pending')
 
@@ -162,6 +194,7 @@ function DocumentUploader({ doc, applicationId }: { doc: any, applicationId: str
       const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(fileName)
       await supabase.from('documents').update({ file_url: publicUrl, status: 'uploaded', uploaded_at: new Date().toISOString() }).eq('id', doc.id)
       setUploaded(true)
+      if (onUploaded) onUploaded()
     } catch (err: any) {
       alert(err.message)
     } finally {
