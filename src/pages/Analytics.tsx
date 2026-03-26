@@ -241,7 +241,7 @@ export default function Analytics() {
         </div>
         {activeTab === 'dashboard' && (
           <button className="btn-primary" onClick={exportPDF} disabled={exporting}>
-            {exporting ? <><span className="spinner" /> Generating PDF...</> : <><FileText size={15} /> Export Full Report (PDF)</>}
+            {exporting ? <><span className="spinner" /> Generating PDF...</> : <><FileText size={15} /> Export Report with Charts (PDF)</>}
           </button>
         )}
       </div>
@@ -369,7 +369,7 @@ export default function Analytics() {
                 <Download size={15} /> Export Excel (CSV)
               </button>
               <button className="btn-primary" onClick={exportPDF} disabled={reportData.length === 0 || exporting}>
-                {exporting ? <><span className="spinner" /> Generating...</> : <><FileText size={15} /> Export PDF with Charts</>}
+                {exporting ? <><span className="spinner" /> Generating...</> : <><FileText size={15} /> Export Data Table (PDF)</>}
               </button>
             </div>
           </div>
