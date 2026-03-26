@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { Briefcase, LogOut, FileText, Calendar } from 'lucide-react'
+import { Briefcase, LogOut, FileText } from 'lucide-react'
 
 const statusColors: Record<string, string> = {
   applied: 'badge-blue', screening: 'badge-yellow', interview: 'badge-purple',
@@ -12,6 +13,14 @@ const statusColors: Record<string, string> = {
 export default function ApplicantPortal() {
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
+
+  const { data: settings } = useQuery({
+    queryKey: ['settings'],
+    queryFn: async () => {
+      const { data } = await supabase.from('app_settings').select('*').single()
+      return data
+    }
+  })
 
   const { data: applications = [], isLoading } = useQuery({
     queryKey: ['my-applications'],
@@ -32,27 +41,40 @@ export default function ApplicantPortal() {
     navigate('/login')
   }
 
+  // Browse jobs — keep session by opening in same tab
+  function handleBrowseJobs() {
+    navigate('/jobs')
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--navy-950)' }}>
       {/* Header */}
       <div style={{ background: 'var(--navy-900)', borderBottom: '1px solid var(--border)', padding: '1rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: '36px', height: '36px', background: 'var(--blue-500)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Briefcase size={18} color="white" />
-          </div>
-          <span style={{ fontWeight: '700' }}>My Applications</span>
+          {settings?.company_logo ? (
+            <img src={settings.company_logo} alt={settings.company_name} style={{ maxHeight: '40px', maxWidth: '160px', objectFit: 'contain' }} />
+          ) : (
+            <>
+              <div style={{ width: '36px', height: '36px', background: 'var(--blue-500)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Briefcase size={18} color="white" />
+              </div>
+              <span style={{ fontWeight: '700' }}>{settings?.company_name || 'Applicant Portal'}</span>
+            </>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Welcome, {profile?.full_name}</span>
-          <button className="btn-secondary" onClick={() => navigate('/jobs')} style={{ fontSize: '0.8125rem' }}>Browse Jobs</button>
-          <button className="btn-secondary" onClick={handleSignOut} style={{ fontSize: '0.8125rem' }}><LogOut size={14} /></button>
+          <button className="btn-secondary" onClick={handleBrowseJobs} style={{ fontSize: '0.8125rem' }}>Browse Jobs</button>
+          <button className="btn-secondary" onClick={handleSignOut} style={{ fontSize: '0.8125rem', padding: '0.5rem' }} title="Sign Out"><LogOut size={14} /></button>
         </div>
       </div>
 
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem' }}>
         <div style={{ marginBottom: '1.5rem' }}>
           <h1 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Application Tracker</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>{applications.length} application{applications.length !== 1 ? 's' : ''} submitted</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+            {applications.length} application{applications.length !== 1 ? 's' : ''} submitted
+          </p>
         </div>
 
         {isLoading ? (
@@ -61,7 +83,7 @@ export default function ApplicantPortal() {
           <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
             <Briefcase size={40} color="var(--text-muted)" style={{ margin: '0 auto 1rem', display: 'block' }} />
             <p style={{ color: 'var(--text-muted)', marginBottom: '1.25rem' }}>You haven't applied to any jobs yet.</p>
-            <button className="btn-primary" onClick={() => navigate('/jobs')}>Browse Open Positions</button>
+            <button className="btn-primary" onClick={handleBrowseJobs}>Browse Open Positions</button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -80,28 +102,39 @@ export default function ApplicantPortal() {
                   <span className={`badge ${statusColors[app.status]}`} style={{ textTransform: 'capitalize', fontSize: '0.8125rem' }}>{app.status}</span>
                 </div>
 
-                {/* Progress bar */}
-                <div style={{ marginTop: '1rem' }}>
+                {/* Pipeline progress */}
+                <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.25rem' }}>
                   {['Applied', 'Screening', 'Interview', 'Assessment', 'Offer', 'Hired'].map((stage, i) => {
                     const stages = ['applied', 'screening', 'interview', 'assessment', 'offer', 'hired']
                     const currentIndex = stages.indexOf(app.status)
                     const isActive = i <= currentIndex && app.status !== 'rejected'
+                    const isCurrent = stages[i] === app.status
                     return (
                       <span key={stage} style={{ display: 'inline-flex', alignItems: 'center', fontSize: '0.75rem' }}>
-                        <span style={{ color: isActive ? '#10b981' : 'var(--text-muted)', fontWeight: isActive ? '600' : '400' }}>
+                        <span style={{
+                          color: isCurrent ? '#10b981' : isActive ? '#10b981' : 'var(--text-muted)',
+                          fontWeight: isCurrent ? '700' : isActive ? '600' : '400',
+                          background: isCurrent ? 'rgba(16,185,129,0.1)' : 'transparent',
+                          padding: isCurrent ? '0.125rem 0.5rem' : '0',
+                          borderRadius: '4px'
+                        }}>
                           {isActive ? '✓ ' : ''}{stage}
                         </span>
                         {i < 5 && <span style={{ margin: '0 0.375rem', color: 'var(--text-muted)' }}>→</span>}
                       </span>
                     )
                   })}
-                  {app.status === 'rejected' && <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: '500', marginLeft: '0.5rem' }}>Not selected</span>}
+                  {app.status === 'rejected' && (
+                    <span style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: '500' }}>Not selected for this role</span>
+                  )}
                 </div>
 
                 {/* Pending documents */}
                 {app.documents?.filter((d: any) => d.status === 'pending').length > 0 && (
                   <div style={{ marginTop: '0.875rem', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', padding: '0.75rem' }}>
-                    <div style={{ fontSize: '0.8125rem', fontWeight: '500', color: '#f59e0b', marginBottom: '0.5rem' }}>⚠ Documents Required</div>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: '600', color: '#f59e0b', marginBottom: '0.625rem' }}>
+                      Action Required — Documents Needed
+                    </div>
                     {app.documents.filter((d: any) => d.status === 'pending').map((doc: any) => (
                       <DocumentUploader key={doc.id} doc={doc} applicationId={app.id} />
                     ))}
@@ -139,20 +172,20 @@ function DocumentUploader({ doc, applicationId }: { doc: any, applicationId: str
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-        <FileText size={14} />{doc.name} {doc.required && <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>*Required</span>}
+        <FileText size={14} />
+        {doc.name}
+        {doc.required && <span style={{ color: '#ef4444', fontSize: '0.7rem', fontWeight: '600' }}>*Required</span>}
       </div>
       {uploaded ? (
-        <span className="badge badge-green" style={{ fontSize: '0.7rem' }}>Uploaded</span>
+        <span className="badge badge-green" style={{ fontSize: '0.7rem' }}>Uploaded ✓</span>
       ) : (
         <label style={{ cursor: 'pointer' }}>
           <input type="file" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadFile(f) }} />
-          <span className="btn-primary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-            {uploading ? <span className="spinner" /> : 'Upload'}
+          <span className="btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+            {uploading ? <span className="spinner" /> : 'Upload File'}
           </span>
         </label>
       )}
     </div>
   )
 }
-
-import { useState } from 'react'
