@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid } from 'recharts'
 import { FileText, Download, Filter, Search } from 'lucide-react'
-import jsPDF from 'jspdf'
+import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import html2canvas from 'html2canvas'
 
@@ -94,7 +94,7 @@ export default function Analytics() {
   async function exportPDF() {
     setExporting(true)
     try {
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+      const doc = new jsPDF('landscape', 'mm', 'a4')
       const pageW = doc.internal.pageSize.width
       const pageH = doc.internal.pageSize.height
 
