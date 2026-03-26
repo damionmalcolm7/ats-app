@@ -261,11 +261,7 @@ export default function ApplicantProfile() {
               <div className="card">
                 <h3 style={{ fontWeight: '600', marginBottom: '0.875rem' }}>Cover Letter</h3>
                 {app.cover_letter ? (
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-                    {app.cover_letter.split('\n').map((line: string, i: number) => (
-                      <span key={i}>{line}<br /></span>
-                    ))}
-                  </div>
+                  <CoverLetter text={app.cover_letter} />
                 ) : (
                   <em style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No cover letter provided</em>
                 )}
@@ -397,6 +393,26 @@ export default function ApplicantProfile() {
       {showInterview && <ScheduleInterview applicationId={id!} jobId={app.job_id} onClose={() => setShowInterview(false)} onSuccess={() => { setShowInterview(false); queryClient.invalidateQueries({ queryKey: ['interviews', id] }) }} />}
       {showEmail && <SendEmailModal applicationId={id!} applicantEmail={details?.email} applicantName={details?.full_name} onClose={() => setShowEmail(false)} />}
       {showDocRequest && <RequestDocument applicationId={id!} onClose={() => setShowDocRequest(false)} onSuccess={() => { setShowDocRequest(false); queryClient.invalidateQueries({ queryKey: ['documents', id] }) }} />}
+    </div>
+  )
+}
+
+function CoverLetter({ text }: { text: string }) {
+  // Split on common letter keywords to create paragraphs
+  const formatted = text
+    .replace(/Dear /g, '\n\nDear ')
+    .replace(/RE:/g, '\n\nRE:')
+    .replace(/Sincerely,/g, '\n\nSincerely,')
+    .replace(/Regards,/g, '\n\nRegards,')
+    .replace(/Thank you,/g, '\n\nThank you,')
+
+  const paragraphs = formatted.split('\n').filter(s => s.trim())
+
+  return (
+    <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.8 }}>
+      {paragraphs.map((para, i) => (
+        <p key={i} style={{ marginBottom: '0.75rem' }}>{para.trim()}</p>
+      ))}
     </div>
   )
 }
