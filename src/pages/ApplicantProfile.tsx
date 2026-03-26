@@ -24,13 +24,24 @@ export default function ApplicantProfile() {
   const { data: app, isLoading } = useQuery({
     queryKey: ['application', id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch application with job and applicant details
+      const { data: appData, error } = await supabase
         .from('applications')
-        .select(`*, job:jobs(*), applicant_details(*), profile:profiles!applications_applicant_id_fkey(*)`)
+        .select(`*, job:jobs(*), applicant_details(*)`)
         .eq('id', id)
         .single()
       if (error) throw error
-      return data as any
+
+      // Separately fetch the applicant profile
+      if (appData?.applicant_id) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', appData.applicant_id)
+          .single()
+        return { ...appData, profile: profileData } as any
+      }
+      return appData as any
     }
   })
 
