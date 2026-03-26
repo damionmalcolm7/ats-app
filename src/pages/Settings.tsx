@@ -88,7 +88,7 @@ export default function Settings() {
     onError: (err: any) => toast.error(err.message)
   })
 
-  const tabs = [{ id: 'company', label: 'Company' }, { id: 'profile', label: 'My Profile' }]
+  const tabs = [{ id: 'company', label: 'Company' }, { id: 'profile', label: 'My Profile' }, { id: 'embed', label: 'Embed Code' }]
 
   return (
     <div>
@@ -181,6 +181,50 @@ export default function Settings() {
           <button className="btn-primary" onClick={() => settingsMutation.mutate()} disabled={settingsMutation.isPending}>
             {settingsMutation.isPending ? <span className="spinner" /> : <><Save size={15} /> Save Settings</>}
           </button>
+        </div>
+      )}
+
+      {activeTab === 'embed' && (
+        <div className="card" style={{ maxWidth: '640px' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>Embed Job Board</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+            Copy and paste this code into your website to display the NHT job board directly on your careers page.
+          </p>
+
+          <div className="form-group">
+            <label className="label">Iframe Embed Code</label>
+            <div style={{ position: 'relative' }}>
+              <textarea
+                className="input"
+                readOnly
+                value={`<iframe\n  src="${window.location.origin}/embed/jobs"\n  width="100%"\n  height="700"\n  frameborder="0"\n  style="border: none; border-radius: 8px;"\n  title="Job Openings"\n></iframe>`}
+                style={{ minHeight: '120px', fontFamily: 'monospace', fontSize: '0.8125rem', resize: 'none' }}
+                onClick={e => (e.target as HTMLTextAreaElement).select()}
+              />
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.375rem' }}>Click the code to select it, then copy and paste into your website</div>
+          </div>
+
+          <div className="form-group">
+            <label className="label">Preview Link</label>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <input className="input" readOnly value={`${window.location.origin}/embed/jobs`} onClick={e => (e.target as HTMLInputElement).select()} />
+              <a href={`${window.location.origin}/embed/jobs`} target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>
+                Preview
+              </a>
+            </div>
+          </div>
+
+          <div style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: '8px', padding: '1rem', marginTop: '0.5rem' }}>
+            <div style={{ fontWeight: '600', fontSize: '0.875rem', color: 'var(--blue-400)', marginBottom: '0.5rem' }}>How to use</div>
+            <ol style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', paddingLeft: '1.25rem', lineHeight: 1.8 }}>
+              <li>Copy the embed code above</li>
+              <li>Open your website's HTML editor or CMS</li>
+              <li>Paste the code where you want the job board to appear</li>
+              <li>Adjust the height value to fit your page layout</li>
+              <li>Save and publish your page</li>
+            </ol>
+          </div>
         </div>
       )}
 
