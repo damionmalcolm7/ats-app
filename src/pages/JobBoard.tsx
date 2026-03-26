@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
-import { Search, MapPin, Briefcase, Clock, DollarSign, Filter } from 'lucide-react'
+import { Search, MapPin, Briefcase, Clock, DollarSign, Filter, LogOut, LayoutDashboard } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
 const PARISHES = [
   'Clarendon', 'Hanover', 'Kingston', 'Manchester', 'Portland',
@@ -21,6 +22,7 @@ const JOB_TYPES = [
 
 export default function JobBoard() {
   const navigate = useNavigate()
+  const { user, profile } = useAuth()
   const [search, setSearch] = useState('')
   const [locationFilter, setLocationFilter] = useState('all')
   const [employmentType, setEmploymentType] = useState('all')
@@ -71,7 +73,17 @@ export default function JobBoard() {
             </>
           )}
         </div>
-        <button className="btn-secondary" onClick={() => navigate('/login')} style={{ fontSize: '0.8125rem' }}>Sign In</button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {user ? (
+            <>
+              <button className="btn-secondary" onClick={() => navigate(profile?.role === 'applicant' ? '/portal' : '/dashboard')} style={{ fontSize: '0.8125rem' }}>
+                {profile?.role === 'applicant' ? 'My Applications' : 'Dashboard'}
+              </button>
+            </>
+          ) : (
+            <button className="btn-secondary" onClick={() => navigate('/login')} style={{ fontSize: '0.8125rem' }}>Sign In</button>
+          )}
+        </div>
       </div>
 
       {/* Hero */}
