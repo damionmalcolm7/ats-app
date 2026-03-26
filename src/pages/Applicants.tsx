@@ -23,10 +23,20 @@ export default function Applicants() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('applications')
-        .select(`*, job:jobs(title, department), applicant_details(full_name, email, phone, skills, years_experience, resume_url)`)
+        .select('*, job:jobs(title, department)')
         .order('created_at', { ascending: false })
       if (error) throw error
-      return data as any[]
+
+      // Fetch applicant details for each application
+      const enriched = await Promise.all((data || []).map(async (app) => {
+        const { data: details } = await supabase
+          .from('applicant_details')
+          .select('*')
+          .eq('application_id', app.id)
+          .single()
+        return { ...app, applicant_details: details }
+      }))
+      return enriched as any[]
     }
   })
 
