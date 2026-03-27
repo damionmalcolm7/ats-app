@@ -6,6 +6,7 @@ import { sendStatusEmail } from '../lib/email'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Mail, Phone, FileText, Star, Tag, Plus, X, Download, Calendar, Upload } from 'lucide-react'
 import ScheduleInterview from '../components/ScheduleInterview'
+import CandidateReviews from '../components/CandidateReviews'
 import SendEmailModal from '../components/SendEmailModal'
 import RequestDocument from '../components/RequestDocument'
 
@@ -168,7 +169,7 @@ export default function ApplicantProfile() {
   if (!app) return <div style={{ padding: '2rem', color: 'var(--text-muted)' }}>Application not found</div>
 
   const details = app.applicant_details
-  const tabs = ['overview', 'resume', 'interviews', 'documents', 'notes']
+  const tabs = ['overview', 'resume', 'interviews', 'documents', 'notes', 'reviews']
 
   return (
     <div>
@@ -478,6 +479,19 @@ export default function ApplicantProfile() {
           )}
         </div>
       </div>
+
+          {/* Reviews tab */}
+          {activeTab === 'reviews' && (
+            <div className="card">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                <div>
+                  <h3 style={{ fontWeight: '600' }}>Team Reviews</h3>
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginTop: '0.25rem' }}>Collaborative candidate evaluation from the hiring team</p>
+                </div>
+              </div>
+              <CandidateReviews applicationId={id!} />
+            </div>
+          )}
 
       {showInterview && <ScheduleInterview applicationId={id!} jobId={app.job_id} existingInterview={rescheduleInterview} onClose={() => { setShowInterview(false); setRescheduleInterview(null) }} onSuccess={() => { setShowInterview(false); setRescheduleInterview(null); queryClient.invalidateQueries({ queryKey: ['interviews', id] }) }} />}
       {showEmail && <SendEmailModal applicationId={id!} applicantEmail={details?.email} applicantName={details?.full_name} jobTitle={app?.job?.title} onClose={() => setShowEmail(false)} />}
