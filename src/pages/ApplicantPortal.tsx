@@ -32,14 +32,14 @@ export default function ApplicantPortal() {
         .order('created_at', { ascending: false })
       if (error) throw error
 
-      // Fetch documents separately to always get fresh data
+      // Fetch documents, interviews and email logs for each application
       const enriched = await Promise.all((data || []).map(async (app) => {
-        const { data: docs } = await supabase
-          .from('documents')
-          .select('*')
-          .eq('application_id', app.id)
-          .order('created_at', { ascending: false })
-        return { ...app, documents: docs || [] }
+        const [docsRes, interviewsRes, emailsRes] = await Promise.all([
+          supabase.from('documents').select('*').eq('application_id', app.id).order('created_at', { ascending: false }),
+          supabase.from('interviews').select('*').eq('application_id', app.id).eq('status', 'scheduled').order('scheduled_at', { ascending: true }),
+          supabase.from('email_logs').select('*').eq('application_id', app.id).order('sent_at', { ascending: false })
+        ])
+        return { ...app, documents: docsRes.data || [], interviews: interviewsRes.data || [], emails: emailsRes.data || [] }
       }))
 
       return enriched as any[]
@@ -141,6 +141,27 @@ export default function ApplicantPortal() {
                   )}
                 </div>
 
+                {/* Upcoming Interviews */}
+                {app.interviews?.length > 0 && (
+                  <div style={{ marginTop: '0.875rem', background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: '8px', padding: '0.875rem' }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: '600', color: 'var(--blue-400)', marginBottom: '0.625rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                      📅 Upcoming Interview{app.interviews.length > 1 ? 's' : ''}
+                    </div>
+                    {app.interviews.map((iv: any) => (
+                      <div key={iv.id} style={{ marginBottom: '0.375rem' }}>
+                        <div style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-primary)' }}>
+                          {new Date(iv.scheduled_at).toLocaleString()}
+                        </div>
+                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
+                          {iv.format === 'video' ? '📹 Video Call' : iv.format === 'phone' ? '📞 Phone Call' : '🏢 In-Person'}
+                          {iv.location_or_link && <span> · <a href={iv.location_or_link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--blue-400)' }}>{iv.location_or_link}</a></span>}
+                        </div>
+                        {iv.notes && <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>{iv.notes}</div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* All documents */}
                 {app.documents?.length > 0 && (
                   <div style={{ marginTop: '0.875rem', background: 'var(--navy-700)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.75rem' }}>
@@ -172,6 +193,25 @@ export default function ApplicantPortal() {
                     ))}
                   </div>
                 )}
+                {/* Email History */}
+                {app.emails?.length > 0 && (
+                  <div style={{ marginTop: '0.875rem', background: 'var(--navy-800)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.875rem' }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.625rem' }}>
+                      📧 Communication History
+                    </div>
+                    {app.emails.map((email: any) => (
+                      <div key={email.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.375rem 0', borderBottom: '1px solid rgba(30,48,96,0.3)' }}>
+                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                          Email sent from {email.recipient_email ? 'HR Team' : 'System'}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          {new Date(email.sent_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
               </div>
             ))}
           </div>
