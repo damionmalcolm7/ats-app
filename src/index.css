@@ -62,3 +62,20 @@ td { padding: 0.875rem 1rem; font-size: 0.875rem; }
 @keyframes spin { to { transform: rotate(360deg); } }
 select.input option { background: var(--navy-800); }
 textarea.input { resize: vertical; min-height: 100px; }
+
+/* ── Mobile Responsive ── */
+@media (max-width: 640px) {
+  .form-row { grid-template-columns: 1fr !important; }
+  .modal { max-width: 95vw !important; margin: 0.5rem !important; }
+  .modal-overlay { padding: 0.5rem !important; align-items: flex-end !important; }
+  .modal { border-radius: 16px 16px 0 0 !important; max-height: 95vh !important; }
+  table { font-size: 0.8125rem !important; }
+  th, td { padding: 0.625rem 0.625rem !important; }
+  .card { padding: 1rem !important; }
+  h1 { font-size: 1.375rem !important; }
+}
+
+@media (max-width: 480px) {
+  .btn-primary, .btn-secondary { font-size: 0.8125rem !important; padding: 0.5rem 0.875rem !important; }
+  .badge { font-size: 0.7rem !important; }
+}
