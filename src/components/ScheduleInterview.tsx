@@ -1,26 +1,46 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { sendEmail } from '../lib/email'
-import { supabase as supabaseClient } from '../lib/supabase'
 import { supabase } from '../lib/supabase'
+import { sendEmail } from '../lib/email'
 import toast from 'react-hot-toast'
 import { X } from 'lucide-react'
 
 interface Props {
   applicationId: string
   jobId: string
+  existingInterview?: any
   onClose: () => void
   onSuccess: () => void
 }
 
-export default function ScheduleInterview({ applicationId, jobId, onClose, onSuccess }: Props) {
+export default function ScheduleInterview({ applicationId, jobId, existingInterview, onClose, onSuccess }: Props) {
   const [form, setForm] = useState({
     scheduled_at: '', format: 'video' as const,
     location_or_link: '', notes: '', interviewers: ''
   })
 
+  useEffect(() => {
+    if (existingInterview) {
+      // Pre-fill form with existing interview data for rescheduling
+      const dt = new Date(existingInterview.scheduled_at)
+      const localDT = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+      setForm({
+        scheduled_at: localDT,
+        format: existingInterview.format,
+        location_or_link: existingInterview.location_or_link || '',
+        notes: existingInterview.notes || '',
+        interviewers: (existingInterview.interviewers || []).join(', ')
+      })
+    }
+  }, [existingInterview])
+
   const mutation = useMutation({
     mutationFn: async () => {
+      if (existingInterview) {
+        // Cancel old interview and create new one
+        await supabase.from('interviews').update({ status: 'cancelled' }).eq('id', existingInterview.id)
+      }
+
       const { error } = await supabase.from('interviews').insert({
         application_id: applicationId,
         job_id: jobId,
@@ -34,15 +54,15 @@ export default function ScheduleInterview({ applicationId, jobId, onClose, onSuc
       if (error) throw error
     },
     onSuccess: async () => {
-      // Fetch applicant details to send email
+      // Send email notification
       try {
-        const { data: appData } = await supabaseClient
+        const { data: appData } = await supabase
           .from('applications')
           .select('applicant_details(full_name, email), job:jobs(title)')
           .eq('id', applicationId)
           .single()
 
-        const { data: settings } = await supabaseClient
+        const { data: settings } = await supabase
           .from('app_settings')
           .select('company_name, sender_name')
           .single()
@@ -53,49 +73,46 @@ export default function ScheduleInterview({ applicationId, jobId, onClose, onSuc
         if (details?.email) {
           const interviewDate = new Date(form.scheduled_at).toLocaleString()
           const formatLabel = form.format === 'video' ? 'Video Call' : form.format === 'phone' ? 'Phone Call' : 'In-Person'
-          const locationInfo = form.location_or_link ? `
-Location/Link: ${form.location_or_link}` : ''
-          const notesInfo = form.notes ? `
-
-Additional Notes: ${form.notes}` : ''
+          const locationInfo = form.location_or_link ? `\nLocation/Link: ${form.location_or_link}` : ''
+          const notesInfo = form.notes ? `\n\nAdditional Notes: ${form.notes}` : ''
+          const isReschedule = !!existingInterview
 
           await sendEmail({
             to: details.email,
-            subject: `Interview Invitation - ${job?.title} at ${settings?.company_name || 'Our Company'}`,
-            body: `Dear ${details.full_name},
-
-We are pleased to invite you for an interview for the ${job?.title} position at ${settings?.company_name || 'Our Company'}.
-
-Interview Details:
-Date & Time: ${interviewDate}
-Format: ${formatLabel}${locationInfo}${notesInfo}
-
-Please confirm your availability by logging into your applicant portal.
-
-We look forward to speaking with you!
-
-Best regards,
-${settings?.sender_name || settings?.company_name || 'HR Team'}`,
+            subject: `${isReschedule ? 'Rescheduled: ' : ''}Interview Invitation - ${job?.title} at ${settings?.company_name || 'Our Company'}`,
+            body: `Dear ${details.full_name},\n\n${isReschedule ? 'Your interview has been rescheduled. Please note the new details below.\n\n' : 'We are pleased to invite you for an interview for the '}${job?.title} position at ${settings?.company_name || 'Our Company'}.\n\nInterview Details:\nDate & Time: ${interviewDate}\nFormat: ${formatLabel}${locationInfo}${notesInfo}\n\nPlease confirm your availability by logging into your applicant portal.\n\nWe look forward to speaking with you!\n\nBest regards,\n${settings?.sender_name || settings?.company_name || 'HR Team'}`,
             application_id: applicationId
           })
         }
       } catch (e) {
         console.error('Failed to send interview email:', e)
       }
-      toast.success('Interview scheduled & email sent!')
+
+      toast.success(existingInterview ? 'Interview rescheduled & email sent!' : 'Interview scheduled & email sent!')
       onSuccess()
     },
     onError: (err: any) => toast.error(err.message)
   })
 
+  const isReschedule = !!existingInterview
+
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: '480px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: '600' }}>Schedule Interview</h2>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: '600' }}>
+            {isReschedule ? '🔄 Reschedule Interview' : 'Schedule Interview'}
+          </h2>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={20} /></button>
         </div>
-        <div style={{ padding: '1.5rem' }}>
+
+        {isReschedule && (
+          <div style={{ margin: '1rem 1.5rem 0', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', padding: '0.75rem', fontSize: '0.8125rem', color: '#f59e0b' }}>
+            ⚠ This will cancel the existing interview and schedule a new one. The applicant will receive an updated email.
+          </div>
+        )}
+
+        <div style={{ padding: '1.25rem 1.5rem' }}>
           <div className="form-group">
             <label className="label">Date & Time *</label>
             <input className="input" type="datetime-local" value={form.scheduled_at} onChange={e => setForm({ ...form, scheduled_at: e.target.value })} required />
@@ -123,10 +140,11 @@ ${settings?.sender_name || settings?.company_name || 'HR Team'}`,
             <textarea className="input" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Any special instructions..." style={{ minHeight: '80px' }} />
           </div>
         </div>
+
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', padding: '1.25rem 1.5rem', borderTop: '1px solid var(--border)' }}>
           <button className="btn-secondary" onClick={onClose}>Cancel</button>
           <button className="btn-primary" onClick={() => mutation.mutate()} disabled={mutation.isPending || !form.scheduled_at}>
-            {mutation.isPending ? <span className="spinner" /> : 'Schedule Interview'}
+            {mutation.isPending ? <span className="spinner" /> : isReschedule ? 'Confirm Reschedule' : 'Schedule Interview'}
           </button>
         </div>
       </div>
