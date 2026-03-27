@@ -453,7 +453,7 @@ export default function ApplicantProfile() {
       </div>
 
       {showInterview && <ScheduleInterview applicationId={id!} jobId={app.job_id} existingInterview={rescheduleInterview} onClose={() => { setShowInterview(false); setRescheduleInterview(null) }} onSuccess={() => { setShowInterview(false); setRescheduleInterview(null); queryClient.invalidateQueries({ queryKey: ['interviews', id] }) }} />}
-      {showEmail && <SendEmailModal applicationId={id!} applicantEmail={details?.email} applicantName={details?.full_name} onClose={() => setShowEmail(false)} />}
+      {showEmail && <SendEmailModal applicationId={id!} applicantEmail={details?.email} applicantName={details?.full_name} jobTitle={app?.job?.title} onClose={() => setShowEmail(false)} />}
       {showDocRequest && <RequestDocument applicationId={id!} onClose={() => setShowDocRequest(false)} onSuccess={() => { setShowDocRequest(false); queryClient.invalidateQueries({ queryKey: ['documents', id] }) }} />}
     </div>
   )
