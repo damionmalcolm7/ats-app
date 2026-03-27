@@ -273,7 +273,7 @@ export default function JobDetail() {
         <span style={{ fontWeight: '700' }}>{settings?.company_name || 'Careers'}</span>
       </div>
 
-      <div style={{ maxWidth: '820px', margin: '0 auto', padding: '2rem' }}>
+      <div style={{ maxWidth: '820px', margin: '0 auto', padding: 'clamp(1rem, 4vw, 2rem)' }}>
         {!showForm ? (
           <>
             <div className="card" style={{ marginBottom: '1.25rem' }}>
@@ -360,7 +360,7 @@ export default function JobDetail() {
             <h3 style={{ fontWeight: '600', marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Personal Information {parsed && <span style={{ color: '#10b981', fontSize: '0.75rem', textTransform: 'none', fontWeight: '400' }}>✓ Auto-filled from resume</span>}
             </h3>
-            <div className="form-row">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
               <div className="form-group">
                 <label className="label">Full Name *</label>
                 <input className="input" value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} placeholder="John Smith" required />
@@ -370,7 +370,7 @@ export default function JobDetail() {
                 <input className="input" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="john@email.com" required />
               </div>
             </div>
-            <div className="form-row">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
               <div className="form-group">
                 <label className="label">Phone Number</label>
                 <input className="input" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+1 (876) 555-0100" />
@@ -408,7 +408,7 @@ export default function JobDetail() {
                 </button>
               </div>
               {workHistory.map((w, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
+                <div key={i} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "0.5rem", marginBottom: "0.5rem", alignItems: "center" }}>
                   <input className="input" value={w.title} onChange={e => { const n = [...workHistory]; n[i].title = e.target.value; setWorkHistory(n) }} placeholder="Job Title" />
                   <input className="input" value={w.company} onChange={e => { const n = [...workHistory]; n[i].company = e.target.value; setWorkHistory(n) }} placeholder="Company" />
                   <input className="input" value={w.duration} onChange={e => { const n = [...workHistory]; n[i].duration = e.target.value; setWorkHistory(n) }} placeholder="e.g. 2020 - 2022" />
@@ -428,7 +428,7 @@ export default function JobDetail() {
                 </button>
               </div>
               {education.map((e, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px auto', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
+                <div key={i} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "0.5rem", marginBottom: "0.5rem", alignItems: "center" }}>
                   <input className="input" value={e.degree} onChange={ev => { const n = [...education]; n[i].degree = ev.target.value; setEducation(n) }} placeholder="Degree / Certificate" />
                   <input className="input" value={e.institution} onChange={ev => { const n = [...education]; n[i].institution = ev.target.value; setEducation(n) }} placeholder="Institution" />
                   <input className="input" value={e.year} onChange={ev => { const n = [...education]; n[i].year = ev.target.value; setEducation(n) }} placeholder="Year" />
