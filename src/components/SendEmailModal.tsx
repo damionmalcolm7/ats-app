@@ -10,10 +10,11 @@ interface Props {
   applicationId: string
   applicantEmail: string
   applicantName: string
+  jobTitle?: string
   onClose: () => void
 }
 
-export default function SendEmailModal({ applicationId, applicantEmail, applicantName, onClose }: Props) {
+export default function SendEmailModal({ applicationId, applicantEmail, applicantName, jobTitle, onClose }: Props) {
   const { profile } = useAuth()
   const [selectedTemplate, setSelectedTemplate] = useState('')
   const [subject, setSubject] = useState('')
@@ -44,6 +45,8 @@ export default function SendEmailModal({ applicationId, applicantEmail, applican
       .replace(/\{\{applicant_name\}\}/g, applicantName)
       .replace(/\{\{company_name\}\}/g, companyName)
       .replace(/\{\{hr_name\}\}/g, profile?.full_name || 'HR Team')
+      .replace(/\{\{job_title\}\}/g, jobTitle || 'the position')
+      .replace(/\{\{interview_date\}\}/g, 'to be confirmed — please check your portal')
     setSubject(filled(t.subject))
     setBody(filled(t.body))
     setSelectedTemplate(templateId)
