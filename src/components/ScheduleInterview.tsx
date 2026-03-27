@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { sendEmail } from '../lib/email'
+import { supabase as supabaseClient } from '../lib/supabase'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
 import { X } from 'lucide-react'
@@ -31,7 +33,58 @@ export default function ScheduleInterview({ applicationId, jobId, onClose, onSuc
       })
       if (error) throw error
     },
-    onSuccess: () => { toast.success('Interview scheduled!'); onSuccess() },
+    onSuccess: async () => {
+      // Fetch applicant details to send email
+      try {
+        const { data: appData } = await supabaseClient
+          .from('applications')
+          .select('applicant_details(full_name, email), job:jobs(title)')
+          .eq('id', applicationId)
+          .single()
+
+        const { data: settings } = await supabaseClient
+          .from('app_settings')
+          .select('company_name, sender_name')
+          .single()
+
+        const details = Array.isArray(appData?.applicant_details) ? appData.applicant_details[0] : appData?.applicant_details
+        const job = Array.isArray(appData?.job) ? appData.job[0] : appData?.job
+
+        if (details?.email) {
+          const interviewDate = new Date(form.scheduled_at).toLocaleString()
+          const formatLabel = form.format === 'video' ? 'Video Call' : form.format === 'phone' ? 'Phone Call' : 'In-Person'
+          const locationInfo = form.location_or_link ? `
+Location/Link: ${form.location_or_link}` : ''
+          const notesInfo = form.notes ? `
+
+Additional Notes: ${form.notes}` : ''
+
+          await sendEmail({
+            to: details.email,
+            subject: `Interview Invitation - ${job?.title} at ${settings?.company_name || 'Our Company'}`,
+            body: `Dear ${details.full_name},
+
+We are pleased to invite you for an interview for the ${job?.title} position at ${settings?.company_name || 'Our Company'}.
+
+Interview Details:
+Date & Time: ${interviewDate}
+Format: ${formatLabel}${locationInfo}${notesInfo}
+
+Please confirm your availability by logging into your applicant portal.
+
+We look forward to speaking with you!
+
+Best regards,
+${settings?.sender_name || settings?.company_name || 'HR Team'}`,
+            application_id: applicationId
+          })
+        }
+      } catch (e) {
+        console.error('Failed to send interview email:', e)
+      }
+      toast.success('Interview scheduled & email sent!')
+      onSuccess()
+    },
     onError: (err: any) => toast.error(err.message)
   })
 
