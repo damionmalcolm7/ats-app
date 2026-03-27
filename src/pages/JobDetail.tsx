@@ -118,6 +118,17 @@ export default function JobDetail() {
     queryFn: async () => { const { data } = await supabase.from('app_settings').select('*').single(); return data }
   })
 
+  const { data: jobQuestions = [] } = useQuery({
+    queryKey: ['job-questions', id],
+    queryFn: async () => {
+      const { data } = await supabase.from('job_questions').select('*').eq('job_id', id).order('order_index')
+      return data || []
+    },
+    enabled: !!id
+  })
+
+  const [answers, setAnswers] = useState<Record<string, string>>({})
+
   async function handleResumeUpload(file: File) {
     setResumeFile(file)
     setParsed(false)
@@ -210,6 +221,20 @@ export default function JobDetail() {
         : 0
 
       await supabase.from('applications').update({ match_score: matchScore }).eq('id', appData.id)
+
+      // Save question answers
+      if (jobQuestions.length > 0 && Object.keys(answers).length > 0) {
+        const answersPayload = Object.entries(answers)
+          .filter(([_, answer]) => answer.trim())
+          .map(([questionId, answer]) => ({
+            application_id: appData.id,
+            question_id: questionId,
+            answer
+          }))
+        if (answersPayload.length > 0) {
+          await supabase.from('application_answers').insert(answersPayload)
+        }
+      }
 
       const { error: detailsError } = await supabase.from('applicant_details').insert({
         application_id: appData.id, full_name: form.full_name, email: form.email, phone: form.phone,
@@ -436,6 +461,60 @@ export default function JobDetail() {
                 </div>
               ))}
             </div>
+
+            {/* Screening Questions */}
+            {jobQuestions.length > 0 && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <h3 style={{ fontWeight: '600', marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Screening Questions
+                </h3>
+                {jobQuestions.map((q: any) => (
+                  <div key={q.id} className="form-group">
+                    <label className="label">
+                      {q.question}
+                      {q.required && <span style={{ color: 'var(--danger)', marginLeft: '0.25rem' }}>*</span>}
+                    </label>
+
+                    {q.question_type === 'yes_no' && (
+                      <div style={{ display: 'flex', gap: '0.75rem' }}>
+                        {['Yes', 'No'].map(opt => (
+                          <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                            <input type="radio" name={q.id} value={opt} checked={answers[q.id] === opt} onChange={() => setAnswers(prev => ({ ...prev, [q.id]: opt }))} />
+                            {opt}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    {q.question_type === 'text' && (
+                      <input className="input" value={answers[q.id] || ''} onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))} placeholder="Your answer..." />
+                    )}
+
+                    {q.question_type === 'number' && (
+                      <input className="input" type="number" min="0" value={answers[q.id] || ''} onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))} placeholder="Enter a number..." style={{ maxWidth: '200px' }} />
+                    )}
+
+                    {(q.question_type === 'dropdown') && (
+                      <select className="input" value={answers[q.id] || ''} onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}>
+                        <option value="">— Select an option —</option>
+                        {(q.options || []).map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
+                      </select>
+                    )}
+
+                    {q.question_type === 'multiple_choice' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {(q.options || []).map((opt: string) => (
+                          <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                            <input type="radio" name={q.id} value={opt} checked={answers[q.id] === opt} onChange={() => setAnswers(prev => ({ ...prev, [q.id]: opt }))} />
+                            {opt}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Cover letter */}
             <div className="form-group">
