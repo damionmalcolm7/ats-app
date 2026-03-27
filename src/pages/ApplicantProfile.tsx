@@ -78,6 +78,17 @@ export default function ApplicantProfile() {
     }
   })
 
+  const { data: answers = [] } = useQuery({
+    queryKey: ['answers', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('application_answers')
+        .select('*, question:job_questions(question, question_type)')
+        .eq('application_id', id)
+      return data || []
+    }
+  })
+
   const { data: ratingData } = useQuery({
     queryKey: ['rating', id],
     queryFn: async () => {
@@ -287,6 +298,22 @@ export default function ApplicantProfile() {
                   <em style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No cover letter provided</em>
                 )}
               </div>
+              {answers.length > 0 && (
+                <div className="card">
+                  <h3 style={{ fontWeight: '600', marginBottom: '0.875rem' }}>Screening Questions & Answers</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {answers.map((a: any) => (
+                      <div key={a.id} style={{ padding: '0.75rem', background: 'var(--navy-700)', borderRadius: '8px' }}>
+                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>{a.question?.question}</div>
+                        <div style={{ fontSize: '0.9375rem', fontWeight: '500', color: a.answer === 'Yes' ? '#10b981' : a.answer === 'No' ? '#ef4444' : 'var(--text-primary)' }}>
+                          {a.answer || '—'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {details?.work_history?.length > 0 && (
                 <div className="card">
                   <h3 style={{ fontWeight: '600', marginBottom: '0.875rem' }}>Work History</h3>
