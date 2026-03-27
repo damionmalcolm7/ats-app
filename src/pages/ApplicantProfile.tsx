@@ -18,6 +18,7 @@ export default function ApplicantProfile() {
   const [note, setNote] = useState('')
   const [rating, setRating] = useState(0)
   const [showInterview, setShowInterview] = useState(false)
+  const [rescheduleInterview, setRescheduleInterview] = useState<any>(null)
   const [showEmail, setShowEmail] = useState(false)
   const [showDocRequest, setShowDocRequest] = useState(false)
 
@@ -331,14 +332,14 @@ export default function ApplicantProfile() {
             <div className="card">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <h3 style={{ fontWeight: '600' }}>Interviews</h3>
-                <button className="btn-primary" onClick={() => setShowInterview(true)}><Plus size={15} /> Schedule</button>
+                <button className="btn-primary" onClick={() => { setRescheduleInterview(null); setShowInterview(true) }}><Plus size={15} /> Schedule New</button>
               </div>
               {interviews.length === 0 ? (
                 <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>No interviews scheduled</p>
               ) : interviews.map((iv: any) => (
                 <div key={iv.id} style={{ padding: '0.875rem', background: 'var(--navy-700)', borderRadius: '8px', marginBottom: '0.75rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
+                    <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: '500', textTransform: 'capitalize' }}>{iv.format} Interview</div>
                       <div style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', marginTop: '0.25rem' }}>
                         {new Date(iv.scheduled_at).toLocaleString()}
@@ -346,9 +347,31 @@ export default function ApplicantProfile() {
                       {iv.location_or_link && <div style={{ color: 'var(--blue-400)', fontSize: '0.8125rem', marginTop: '0.25rem' }}>{iv.location_or_link}</div>}
                       {iv.notes && <div style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginTop: '0.25rem' }}>{iv.notes}</div>}
                     </div>
-                    <span className={`badge ${iv.status === 'scheduled' ? 'badge-blue' : iv.status === 'completed' ? 'badge-green' : 'badge-red'}`} style={{ textTransform: 'capitalize' }}>
-                      {iv.status}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                      <span className={`badge ${iv.status === 'scheduled' ? 'badge-blue' : iv.status === 'completed' ? 'badge-green' : 'badge-red'}`} style={{ textTransform: 'capitalize' }}>
+                        {iv.status}
+                      </span>
+                      {iv.status === 'scheduled' && (
+                        <div style={{ display: 'flex', gap: '0.375rem' }}>
+                          <button
+                            onClick={() => { setRescheduleInterview(iv); setShowInterview(true) }}
+                            style={{ background: 'rgba(37,99,235,0.15)', border: '1px solid rgba(37,99,235,0.3)', color: '#3b82f6', borderRadius: '6px', padding: '0.25rem 0.625rem', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <Calendar size={12} /> Reschedule
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (confirm('Cancel this interview? The applicant will be notified.')) {
+                                await supabase.from('interviews').update({ status: 'cancelled' }).eq('id', iv.id)
+                                queryClient.invalidateQueries({ queryKey: ['interviews', id] })
+                                toast.success('Interview cancelled')
+                              }
+                            }}
+                            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: '6px', padding: '0.25rem 0.625rem', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <X size={12} /> Cancel
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -429,7 +452,7 @@ export default function ApplicantProfile() {
         </div>
       </div>
 
-      {showInterview && <ScheduleInterview applicationId={id!} jobId={app.job_id} onClose={() => setShowInterview(false)} onSuccess={() => { setShowInterview(false); queryClient.invalidateQueries({ queryKey: ['interviews', id] }) }} />}
+      {showInterview && <ScheduleInterview applicationId={id!} jobId={app.job_id} existingInterview={rescheduleInterview} onClose={() => { setShowInterview(false); setRescheduleInterview(null) }} onSuccess={() => { setShowInterview(false); setRescheduleInterview(null); queryClient.invalidateQueries({ queryKey: ['interviews', id] }) }} />}
       {showEmail && <SendEmailModal applicationId={id!} applicantEmail={details?.email} applicantName={details?.full_name} onClose={() => setShowEmail(false)} />}
       {showDocRequest && <RequestDocument applicationId={id!} onClose={() => setShowDocRequest(false)} onSuccess={() => { setShowDocRequest(false); queryClient.invalidateQueries({ queryKey: ['documents', id] }) }} />}
     </div>
