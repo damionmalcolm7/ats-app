@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { sendEmail as sendEmailViaEdge } from '../lib/email'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
@@ -52,20 +53,19 @@ export default function SendEmailModal({ applicationId, applicantEmail, applican
     if (!subject || !body) return toast.error('Subject and body required')
     setSending(true)
     try {
-      // Log the email
-      await supabase.from('email_logs').insert({
+      const result = await sendEmailViaEdge({
+        to: applicantEmail,
+        subject,
+        body,
         application_id: applicationId,
-        template_id: selectedTemplate || null,
-        recipient_email: applicantEmail,
-        sent_at: new Date().toISOString(),
-        status: 'sent'
+        applicant_name: applicantName,
+        hr_name: profile?.full_name || 'HR Team'
       })
-      // In production, call your edge function here:
-      // await fetch('/api/send-email', { method: 'POST', body: JSON.stringify({ to: applicantEmail, subject, body }) })
+      if (!result.success) throw new Error(result.error || 'Failed to send email')
       toast.success(`Email sent to ${applicantEmail}`)
       onClose()
     } catch (err: any) {
-      toast.error(err.message)
+      toast.error(err.message || 'Failed to send email')
     } finally {
       setSending(false)
     }
