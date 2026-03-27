@@ -4,6 +4,7 @@ import { supabase, EmailTemplate } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { Plus, Edit, Trash2, X, Eye } from 'lucide-react'
+import RichTextEditor from '../components/RichTextEditor'
 
 const DEFAULT_TEMPLATES = [
   { name: 'Application Received', trigger_event: 'application_received', subject: 'We received your application for {{job_title}}', body: 'Dear {{applicant_name}},\n\nThank you for applying for the {{job_title}} position at {{company_name}}. We have received your application and will review it shortly.\n\nWe will be in touch with next steps.\n\nBest regards,\n{{hr_name}}\n{{company_name}}' },
@@ -182,7 +183,12 @@ function TemplateForm({ template, onClose, onSuccess }: { template: EmailTemplat
           </div>
           <div className="form-group">
             <label className="label">Body *</label>
-            <textarea className="input" value={form.body} onChange={e => setForm({ ...form, body: e.target.value })} placeholder="Email body content..." style={{ minHeight: '220px' }} required />
+            <RichTextEditor
+              value={form.body}
+              onChange={val => setForm({ ...form, body: val })}
+              placeholder="Email body content..."
+              minHeight="220px"
+            />
           </div>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', padding: '1.25rem 1.5rem', borderTop: '1px solid var(--border)' }}>
