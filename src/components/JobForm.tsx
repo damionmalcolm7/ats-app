@@ -4,6 +4,7 @@ import { supabase, Job } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { X, Plus, Trash2 } from 'lucide-react'
+import RichTextEditor from './RichTextEditor'
 
 interface Props {
   job: Job | null
@@ -177,7 +178,12 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
 
           <div className="form-group">
             <label className="label">Job Description *</label>
-            <textarea className="input" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Describe the role, responsibilities, and requirements..." style={{ minHeight: '140px' }} required />
+            <RichTextEditor
+              value={form.description}
+              onChange={val => setForm({ ...form, description: val })}
+              placeholder="Describe the role, responsibilities, and requirements..."
+              minHeight="200px"
+            />
           </div>
 
           <div className="form-group">
