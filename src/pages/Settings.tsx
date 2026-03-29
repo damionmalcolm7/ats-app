@@ -4,11 +4,12 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { sendEmail } from '../lib/email'
 import toast from 'react-hot-toast'
-import { Upload, Plus, Trash2, Mail, RefreshCw } from 'lucide-react'
+import { Upload, Trash2, Mail, RefreshCw } from 'lucide-react'
 
 export default function Settings() {
   const { profile } = useAuth()
   const queryClient = useQueryClient()
+  const isSuperAdmin = profile?.role === 'super_admin'
   const [activeTab, setActiveTab] = useState('company')
   const [settings, setSettings] = useState<any>(null)
   const [profileForm, setProfileForm] = useState({ full_name: profile?.full_name || '' })
@@ -16,7 +17,7 @@ export default function Settings() {
   const [inviteRole, setInviteRole] = useState('hr')
   const [uploading, setUploading] = useState(false)
 
-  const { data: savedSettings } = useQuery({
+  const { data: savedSettings, isLoading: settingsLoading } = useQuery({
     queryKey: ['settings'],
     queryFn: async () => {
       const { data } = await supabase.from('app_settings').select('*').single()
@@ -34,7 +35,8 @@ export default function Settings() {
         .in('role', ['hr', 'super_admin'])
         .order('full_name')
       return data || []
-    }
+    },
+    enabled: isSuperAdmin
   })
 
   const { data: pendingInvites = [] } = useQuery({
@@ -46,7 +48,8 @@ export default function Settings() {
         .eq('accepted', false)
         .order('created_at', { ascending: false })
       return data || []
-    }
+    },
+    enabled: isSuperAdmin
   })
 
   const saveSettings = useMutation({
@@ -103,7 +106,7 @@ export default function Settings() {
       await sendEmail({
         to: invite.email,
         subject: `Reminder: You've been invited to join ${settings?.company_name || 'Our Company'} ATS`,
-        body: `You have been invited to join the ${settings?.company_name || 'Our Company'} Applicant Tracking System as ${roleLabel}.\n\nClick the button below to set up your account:\n\n<a href="${inviteUrl}" style="display:inline-block;background:#1B3A6B;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Set Up My Account</a>\n\nThis invite expires in 7 days.\n\nBest regards,\n${profile?.full_name || 'HR Team'}`,
+        body: `This is a reminder that you have been invited to join the ${settings?.company_name || 'Our Company'} Applicant Tracking System as ${roleLabel}.\n\nClick the button below to set up your account:\n\n<a href="${inviteUrl}" style="display:inline-block;background:#1B3A6B;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Set Up My Account</a>\n\nThis invite expires in 7 days.\n\nBest regards,\n${profile?.full_name || 'HR Team'}`,
         application_id: null,
         hr_name: profile?.full_name || 'HR Team'
       })
@@ -155,18 +158,18 @@ export default function Settings() {
     }
   }
 
-const tabs = [
-  { id: 'company', label: 'Company' },
-  ...(profile?.role === 'super_admin' ? [{ id: 'users', label: 'Team Members' }] : []),
-  { id: 'profile', label: 'My Profile' },
-  { id: 'embed', label: 'Embed Code' },
-]
+  const tabs = [
+    { id: 'company', label: 'Company' },
+    ...(isSuperAdmin ? [{ id: 'users', label: 'Team Members' }] : []),
+    { id: 'profile', label: 'My Profile' },
+    { id: 'embed', label: 'Embed Code' },
+  ]
 
   return (
     <div>
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Settings</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>Manage your system preferences</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>Manage your preferences</p>
       </div>
 
       <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1.5rem', background: 'var(--navy-900)', borderRadius: '10px', padding: '0.25rem', width: 'fit-content', flexWrap: 'wrap' }}>
@@ -179,45 +182,74 @@ const tabs = [
       </div>
 
       {/* Company Tab */}
-      {activeTab === 'company' && settings && (
+      {activeTab === 'company' && (
         <div className="card" style={{ maxWidth: '600px' }}>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1.5rem' }}>Company Settings</h2>
-          <div className="form-group">
-            <label className="label">Company Name</label>
-            <input className="input" value={settings.company_name || ''} onChange={e => setSettings({ ...settings, company_name: e.target.value })} placeholder="National Housing Trust" />
-          </div>
-          <div className="form-group">
-            <label className="label">Company Logo</label>
-            {settings.company_logo && (
-              <div style={{ marginBottom: '0.75rem', padding: '0.75rem', background: 'var(--navy-700)', borderRadius: '8px', display: 'inline-block' }}>
-                <img src={settings.company_logo} alt="Logo" style={{ maxHeight: '60px', maxWidth: '200px', objectFit: 'contain' }} />
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: '600' }}>
+              {isSuperAdmin ? 'Company Settings' : 'Company Information'}
+            </h2>
+            {!isSuperAdmin && (
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--navy-700)', padding: '0.25rem 0.625rem', borderRadius: '6px' }}>
+                View only
+              </span>
             )}
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }} className="btn-secondary">
-              <Upload size={15} /> {uploading ? 'Uploading...' : 'Upload Logo'}
-              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f) }} />
-            </label>
           </div>
-          <div className="form-group">
-            <label className="label">Sender Name</label>
-            <input className="input" value={settings.sender_name || ''} onChange={e => setSettings({ ...settings, sender_name: e.target.value })} placeholder="HR Team" />
-          </div>
-          <div className="form-group">
-            <label className="label">Sender Email</label>
-            <input className="input" type="email" value={settings.sender_email || ''} onChange={e => setSettings({ ...settings, sender_email: e.target.value })} placeholder="hr@company.com" />
-          </div>
-          <div className="form-group">
-            <label className="label">Careers Page URL</label>
-            <input className="input" value={settings.careers_url || ''} onChange={e => setSettings({ ...settings, careers_url: e.target.value })} placeholder="https://yourcompany.com/careers" />
-          </div>
-          <button className="btn-primary" onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending}>
-            {saveSettings.isPending ? <span className="spinner" /> : 'Save Settings'}
-          </button>
+
+          {settingsLoading ? (
+            <div style={{ textAlign: 'center', padding: '2rem' }}><span className="spinner" /></div>
+          ) : !settings ? (
+            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>No company settings found</div>
+          ) : (
+            <>
+              <div className="form-group">
+                <label className="label">Company Name</label>
+                <input className="input" value={settings.company_name || ''} onChange={e => isSuperAdmin && setSettings({ ...settings, company_name: e.target.value })} disabled={!isSuperAdmin} style={{ opacity: isSuperAdmin ? 1 : 0.7 }} />
+              </div>
+
+              <div className="form-group">
+                <label className="label">Company Logo</label>
+                {settings.company_logo ? (
+                  <div style={{ marginBottom: '0.75rem', padding: '0.75rem', background: 'var(--navy-700)', borderRadius: '8px', display: 'inline-block' }}>
+                    <img src={settings.company_logo} alt="Logo" style={{ maxHeight: '60px', maxWidth: '200px', objectFit: 'contain' }} />
+                  </div>
+                ) : (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '0.75rem' }}>No logo uploaded</div>
+                )}
+                {isSuperAdmin && (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }} className="btn-secondary">
+                    <Upload size={15} /> {uploading ? 'Uploading...' : 'Upload Logo'}
+                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f) }} />
+                  </label>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label className="label">Sender Name</label>
+                <input className="input" value={settings.sender_name || ''} onChange={e => isSuperAdmin && setSettings({ ...settings, sender_name: e.target.value })} disabled={!isSuperAdmin} style={{ opacity: isSuperAdmin ? 1 : 0.7 }} />
+              </div>
+
+              <div className="form-group">
+                <label className="label">Sender Email</label>
+                <input className="input" type="email" value={settings.sender_email || ''} onChange={e => isSuperAdmin && setSettings({ ...settings, sender_email: e.target.value })} disabled={!isSuperAdmin} style={{ opacity: isSuperAdmin ? 1 : 0.7 }} />
+              </div>
+
+              <div className="form-group">
+                <label className="label">Careers Page URL</label>
+                <input className="input" value={settings.careers_url || ''} onChange={e => isSuperAdmin && setSettings({ ...settings, careers_url: e.target.value })} disabled={!isSuperAdmin} style={{ opacity: isSuperAdmin ? 1 : 0.7 }} />
+              </div>
+
+              {isSuperAdmin && (
+                <button className="btn-primary" onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending}>
+                  {saveSettings.isPending ? <span className="spinner" /> : 'Save Settings'}
+                </button>
+              )}
+            </>
+          )}
         </div>
       )}
 
-      {/* Team Members Tab */}
-      {activeTab === 'users' && (
+      {/* Team Members Tab - Super Admin only */}
+      {activeTab === 'users' && isSuperAdmin && (
         <div style={{ maxWidth: '700px' }}>
           <div className="card" style={{ marginBottom: '1.25rem' }}>
             <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.375rem' }}>Invite Team Member</h2>
