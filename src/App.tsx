@@ -19,6 +19,7 @@ import JobDetail from './pages/JobDetail'
 import ApplicantPortal from './pages/ApplicantPortal'
 import ResetPassword from './pages/ResetPassword'
 import EmbedJobBoard from './pages/EmbedJobBoard'
+import AcceptInvite from './pages/AcceptInvite'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 30000 } } })
 
@@ -34,6 +35,7 @@ export default function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/embed/jobs" element={<EmbedJobBoard />} />
+            <Route path="/invite/:token" element={<AcceptInvite />} />
             <Route path="/jobs" element={<JobBoard />} />
             <Route path="/jobs/:id" element={<JobDetail />} />
             <Route path="/portal" element={<ProtectedRoute><ApplicantPortal /></ProtectedRoute>} />
