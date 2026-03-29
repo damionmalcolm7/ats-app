@@ -1,103 +1,175 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { sendEmail } from '../lib/email'
 import toast from 'react-hot-toast'
-import { Save, Upload, X } from 'lucide-react'
+import { Upload, Plus, Trash2, Mail, RefreshCw } from 'lucide-react'
 
 export default function Settings() {
-  const { profile, refreshProfile } = useAuth()
+  const { profile } = useAuth()
   const queryClient = useQueryClient()
-  const [settings, setSettings] = useState({ company_name: '', primary_color: '#2563eb', careers_page_url: '', sender_email: '', sender_name: '', company_logo: '' })
-  const [profileForm, setProfileForm] = useState({ full_name: '', email: '' })
-  const [logoUploading, setLogoUploading] = useState(false)
-  const [logoPreview, setLogoPreview] = useState('')
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [activeTab, setActiveTab] = useState('company')
+  const [settings, setSettings] = useState<any>(null)
+  const [profileForm, setProfileForm] = useState({ full_name: profile?.full_name || '' })
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState('hr')
+  const [uploading, setUploading] = useState(false)
 
-  const { data: dbSettings } = useQuery({
+  const { data: savedSettings } = useQuery({
     queryKey: ['settings'],
     queryFn: async () => {
       const { data } = await supabase.from('app_settings').select('*').single()
+      if (data) setSettings(data)
       return data
     }
   })
 
-  useEffect(() => {
-    if (dbSettings) {
-      setSettings({
-        company_name: dbSettings.company_name || '',
-        primary_color: dbSettings.primary_color || '#2563eb',
-        careers_page_url: dbSettings.careers_page_url || '',
-        sender_email: dbSettings.sender_email || '',
-        sender_name: dbSettings.sender_name || '',
-        company_logo: dbSettings.company_logo || ''
-      })
-      if (dbSettings.company_logo) setLogoPreview(dbSettings.company_logo)
+  const { data: hrUsers = [] } = useQuery({
+    queryKey: ['hr-users'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('user_id, full_name, email, role, created_at')
+        .in('role', ['hr', 'super_admin'])
+        .order('full_name')
+      return data || []
     }
-  }, [dbSettings])
+  })
 
-  useEffect(() => {
-    if (profile) setProfileForm({ full_name: profile.full_name || '', email: profile.email || '' })
-  }, [profile])
-
-  async function handleLogoUpload(file: File) {
-    if (!file) return
-    if (!file.type.startsWith('image/')) return toast.error('Please upload an image file')
-    if (file.size > 5 * 1024 * 1024) return toast.error('Image must be under 5MB')
-
-    setLogoUploading(true)
-    try {
-      const fileName = `logo-${Date.now()}.${file.name.split('.').pop()}`
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { upsert: true })
-      if (uploadError) throw uploadError
-
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName)
-      setLogoPreview(publicUrl)
-      setSettings(s => ({ ...s, company_logo: publicUrl }))
-      toast.success('Logo uploaded!')
-    } catch (err: any) {
-      toast.error(err.message || 'Upload failed')
-    } finally {
-      setLogoUploading(false)
+  const { data: pendingInvites = [] } = useQuery({
+    queryKey: ['hr-invites'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('hr_invites')
+        .select('*')
+        .eq('accepted', false)
+        .order('created_at', { ascending: false })
+      return data || []
     }
-  }
+  })
 
-  const settingsMutation = useMutation({
+  const saveSettings = useMutation({
     mutationFn: async () => {
-      if (dbSettings?.id) {
-        const { error } = await supabase.from('app_settings').update(settings).eq('id', dbSettings.id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from('app_settings').insert(settings)
-        if (error) throw error
-      }
+      const { error } = await supabase.from('app_settings').upsert({ ...settings, id: savedSettings?.id || 1 })
+      if (error) throw error
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['settings'] }); toast.success('Settings saved!') },
     onError: (err: any) => toast.error(err.message)
   })
 
-  const profileMutation = useMutation({
+  const saveProfile = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from('profiles').update({ full_name: profileForm.full_name }).eq('user_id', profile?.user_id)
       if (error) throw error
     },
-    onSuccess: () => { refreshProfile(); toast.success('Profile updated!') },
+    onSuccess: () => toast.success('Profile updated!'),
     onError: (err: any) => toast.error(err.message)
   })
 
-  const tabs = [{ id: 'company', label: 'Company' }, { id: 'profile', label: 'My Profile' }, { id: 'embed', label: 'Embed Code' }]
+  const sendInvite = useMutation({
+    mutationFn: async () => {
+      if (!inviteEmail.trim()) throw new Error('Please enter an email address')
+      const { data: existing } = await supabase.from('profiles').select('user_id').eq('email', inviteEmail.trim()).single()
+      if (existing) throw new Error('This person already has an account')
+      const { data: invite, error } = await supabase
+        .from('hr_invites')
+        .insert({ email: inviteEmail.trim(), role: inviteRole, invited_by: profile?.user_id })
+        .select().single()
+      if (error) throw error
+      const inviteUrl = `${window.location.origin}/invite/${invite.token}`
+      const roleLabel = inviteRole === 'super_admin' ? 'Super Admin' : 'HR Staff'
+      await sendEmail({
+        to: inviteEmail.trim(),
+        subject: `You've been invited to join ${settings?.company_name || 'Our Company'} ATS`,
+        body: `You have been invited to join the ${settings?.company_name || 'Our Company'} Applicant Tracking System as ${roleLabel}.\n\nClick the link below to set up your account:\n${inviteUrl}\n\nThis invite expires in 7 days.\n\nBest regards,\n${profile?.full_name || 'HR Team'}`,
+        application_id: null,
+        hr_name: profile?.full_name || 'HR Team'
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hr-invites'] })
+      toast.success(`Invite sent to ${inviteEmail}!`)
+      setInviteEmail('')
+      setInviteRole('hr')
+    },
+    onError: (err: any) => toast.error(err.message)
+  })
+
+  const resendInvite = useMutation({
+    mutationFn: async (invite: any) => {
+      const inviteUrl = `${window.location.origin}/invite/${invite.token}`
+      const roleLabel = invite.role === 'super_admin' ? 'Super Admin' : 'HR Staff'
+      await sendEmail({
+        to: invite.email,
+        subject: `Reminder: You've been invited to join ${settings?.company_name || 'Our Company'} ATS`,
+        body: `This is a reminder that you have been invited to join the ${settings?.company_name || 'Our Company'} Applicant Tracking System as ${roleLabel}.\n\nClick the link below to set up your account:\n${inviteUrl}\n\nThis invite expires in 7 days.\n\nBest regards,\n${profile?.full_name || 'HR Team'}`,
+        application_id: null,
+        hr_name: profile?.full_name || 'HR Team'
+      })
+    },
+    onSuccess: () => toast.success('Invite resent!'),
+    onError: (err: any) => toast.error(err.message)
+  })
+
+  const revokeInvite = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('hr_invites').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['hr-invites'] }); toast.success('Invite revoked') }
+  })
+
+  const changeRole = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string, role: string }) => {
+      const { error } = await supabase.from('profiles').update({ role }).eq('user_id', userId)
+      if (error) throw error
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['hr-users'] }); toast.success('Role updated') },
+    onError: (err: any) => toast.error(err.message)
+  })
+
+  const removeUser = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase.from('profiles').update({ role: 'applicant' }).eq('user_id', userId)
+      if (error) throw error
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['hr-users'] }); toast.success('User removed from HR team') },
+    onError: (err: any) => toast.error(err.message)
+  })
+
+  async function uploadLogo(file: File) {
+    setUploading(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const fileName = `logo-${Date.now()}.${ext}`
+      const { error } = await supabase.storage.from('avatars').upload(fileName, file, { upsert: true })
+      if (error) throw error
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName)
+      setSettings({ ...settings, company_logo: publicUrl })
+      toast.success('Logo uploaded!')
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const tabs = [
+    { id: 'company', label: 'Company' },
+    { id: 'users', label: 'Team Members' },
+    { id: 'profile', label: 'My Profile' },
+    { id: 'embed', label: 'Embed Code' },
+  ]
 
   return (
     <div>
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Settings</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>Manage your account and company settings</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>Manage your system preferences</p>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1.5rem', background: 'var(--navy-900)', borderRadius: '10px', padding: '0.25rem', width: 'fit-content' }}>
+      <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1.5rem', background: 'var(--navy-900)', borderRadius: '10px', padding: '0.25rem', width: 'fit-content', flexWrap: 'wrap' }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
             style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500', background: activeTab === t.id ? 'var(--blue-500)' : 'transparent', color: activeTab === t.id ? 'white' : 'var(--text-muted)', transition: 'all 0.2s' }}>
@@ -106,152 +178,189 @@ export default function Settings() {
         ))}
       </div>
 
-      {activeTab === 'company' && (
-        <div className="card" style={{ maxWidth: '640px' }}>
+      {/* Company Tab */}
+      {activeTab === 'company' && settings && (
+        <div className="card" style={{ maxWidth: '600px' }}>
           <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1.5rem' }}>Company Settings</h2>
-
-          {/* Logo Upload */}
-          <div className="form-group">
-            <label className="label">Company Logo</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-              {/* Logo preview */}
-              <div style={{ width: '120px', height: '80px', background: 'var(--navy-700)', borderRadius: '10px', border: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
-                {logoPreview ? (
-                  <img src={logoPreview} alt="Company Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '8px' }} />
-                ) : (
-                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-                    <Upload size={20} style={{ margin: '0 auto 0.25rem', display: 'block' }} />
-                    No logo
-                  </div>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept="image/png,image/jpg,image/jpeg,image/svg+xml"
-                  style={{ display: 'none' }}
-                  onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f) }}
-                />
-                <button className="btn-primary" onClick={() => fileInputRef.current?.click()} disabled={logoUploading} style={{ width: 'fit-content' }}>
-                  {logoUploading ? <><span className="spinner" /> Uploading...</> : <><Upload size={15} /> Upload Logo</>}
-                </button>
-                {logoPreview && (
-                  <button className="btn-secondary" style={{ width: 'fit-content', fontSize: '0.8125rem' }}
-                    onClick={() => { setLogoPreview(''); setSettings(s => ({ ...s, company_logo: '' })) }}>
-                    <X size={13} /> Remove Logo
-                  </button>
-                )}
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>PNG, JPG or SVG. Max 5MB.<br />Recommended: 200x80px or wider</p>
-              </div>
-            </div>
-          </div>
-
           <div className="form-group">
             <label className="label">Company Name</label>
-            <input className="input" value={settings.company_name} onChange={e => setSettings({ ...settings, company_name: e.target.value })} placeholder="National Housing Trust" />
+            <input className="input" value={settings.company_name || ''} onChange={e => setSettings({ ...settings, company_name: e.target.value })} placeholder="National Housing Trust" />
           </div>
-
+          <div className="form-group">
+            <label className="label">Company Logo</label>
+            {settings.company_logo && (
+              <div style={{ marginBottom: '0.75rem', padding: '0.75rem', background: 'var(--navy-700)', borderRadius: '8px', display: 'inline-block' }}>
+                <img src={settings.company_logo} alt="Logo" style={{ maxHeight: '60px', maxWidth: '200px', objectFit: 'contain' }} />
+              </div>
+            )}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }} className="btn-secondary">
+              <Upload size={15} /> {uploading ? 'Uploading...' : 'Upload Logo'}
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) uploadLogo(f) }} />
+            </label>
+          </div>
+          <div className="form-group">
+            <label className="label">Sender Name</label>
+            <input className="input" value={settings.sender_name || ''} onChange={e => setSettings({ ...settings, sender_name: e.target.value })} placeholder="HR Team" />
+          </div>
+          <div className="form-group">
+            <label className="label">Sender Email</label>
+            <input className="input" type="email" value={settings.sender_email || ''} onChange={e => setSettings({ ...settings, sender_email: e.target.value })} placeholder="hr@company.com" />
+          </div>
           <div className="form-group">
             <label className="label">Careers Page URL</label>
-            <input className="input" value={settings.careers_page_url} onChange={e => setSettings({ ...settings, careers_page_url: e.target.value })} placeholder="https://nht.gov.jm/careers" />
+            <input className="input" value={settings.careers_url || ''} onChange={e => setSettings({ ...settings, careers_url: e.target.value })} placeholder="https://yourcompany.com/careers" />
           </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label className="label">Sender Name</label>
-              <input className="input" value={settings.sender_name} onChange={e => setSettings({ ...settings, sender_name: e.target.value })} placeholder="NHT HR Team" />
-            </div>
-            <div className="form-group">
-              <label className="label">Sender Email</label>
-              <input className="input" type="email" value={settings.sender_email} onChange={e => setSettings({ ...settings, sender_email: e.target.value })} placeholder="hr@nht.gov.jm" />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="label">Brand Color</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <input type="color" value={settings.primary_color} onChange={e => setSettings({ ...settings, primary_color: e.target.value })}
-                style={{ width: '48px', height: '40px', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'none' }} />
-              <input className="input" value={settings.primary_color} onChange={e => setSettings({ ...settings, primary_color: e.target.value })} style={{ width: '140px' }} />
-            </div>
-          </div>
-
-          <button className="btn-primary" onClick={() => settingsMutation.mutate()} disabled={settingsMutation.isPending}>
-            {settingsMutation.isPending ? <span className="spinner" /> : <><Save size={15} /> Save Settings</>}
+          <button className="btn-primary" onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending}>
+            {saveSettings.isPending ? <span className="spinner" /> : 'Save Settings'}
           </button>
         </div>
       )}
 
-      {activeTab === 'embed' && (
-        <div className="card" style={{ maxWidth: '640px' }}>
-          <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>Embed Job Board</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-            Copy and paste this code into your website to display the NHT job board directly on your careers page.
-          </p>
-
-          <div className="form-group">
-            <label className="label">Iframe Embed Code</label>
-            <div style={{ position: 'relative' }}>
-              <textarea
-                className="input"
-                readOnly
-                value={`<iframe\n  src="${window.location.origin}/embed/jobs"\n  width="100%"\n  height="700"\n  frameborder="0"\n  style="border: none; border-radius: 8px;"\n  title="Job Openings"\n></iframe>`}
-                style={{ minHeight: '120px', fontFamily: 'monospace', fontSize: '0.8125rem', resize: 'none' }}
-                onClick={e => (e.target as HTMLTextAreaElement).select()}
-              />
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.375rem' }}>Click the code to select it, then copy and paste into your website</div>
-          </div>
-
-          <div className="form-group">
-            <label className="label">Preview Link</label>
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-              <input className="input" readOnly value={`${window.location.origin}/embed/jobs`} onClick={e => (e.target as HTMLInputElement).select()} />
-              <a href={`${window.location.origin}/embed/jobs`} target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>
-                Preview
-              </a>
+      {/* Team Members Tab */}
+      {activeTab === 'users' && (
+        <div style={{ maxWidth: '700px' }}>
+          <div className="card" style={{ marginBottom: '1.25rem' }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.375rem' }}>Invite Team Member</h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
+              Send an invite link to add a new HR team member. They will receive an email to set up their account.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '0.75rem', alignItems: 'flex-end' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="label">Email Address</label>
+                <input className="input" type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="colleague@company.com"
+                  onKeyDown={e => e.key === 'Enter' && sendInvite.mutate()} />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="label">Role</label>
+                <select className="input" value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
+                  <option value="hr">HR Staff</option>
+                  <option value="super_admin">Super Admin</option>
+                </select>
+              </div>
+              <button className="btn-primary" onClick={() => sendInvite.mutate()} disabled={sendInvite.isPending || !inviteEmail.trim()} style={{ marginBottom: '0.125rem' }}>
+                {sendInvite.isPending ? <span className="spinner" /> : <><Mail size={15} /> Send Invite</>}
+              </button>
             </div>
           </div>
 
-          <div style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: '8px', padding: '1rem', marginTop: '0.5rem' }}>
-            <div style={{ fontWeight: '600', fontSize: '0.875rem', color: 'var(--blue-400)', marginBottom: '0.5rem' }}>How to use</div>
-            <ol style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem', paddingLeft: '1.25rem', lineHeight: 1.8 }}>
-              <li>Copy the embed code above</li>
-              <li>Open your website's HTML editor or CMS</li>
-              <li>Paste the code where you want the job board to appear</li>
-              <li>Adjust the height value to fit your page layout</li>
-              <li>Save and publish your page</li>
-            </ol>
+          {pendingInvites.length > 0 && (
+            <div className="card" style={{ marginBottom: '1.25rem' }}>
+              <h3 style={{ fontWeight: '600', marginBottom: '1rem', fontSize: '0.9375rem' }}>Pending Invites ({pendingInvites.length})</h3>
+              {pendingInvites.map((invite: any) => (
+                <div key={invite.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', background: 'var(--navy-700)', borderRadius: '8px', marginBottom: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Mail size={16} color="#f59e0b" />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: '500', fontSize: '0.875rem' }}>{invite.email}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
+                        {invite.role.replace('_', ' ')} · Expires {new Date(invite.expires_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={() => resendInvite.mutate(invite)} className="btn-secondary" style={{ padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}>
+                      <RefreshCw size={13} /> Resend
+                    </button>
+                    <button onClick={() => { if (confirm('Revoke this invite?')) revokeInvite.mutate(invite.id) }}
+                      style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: '6px', padding: '0.25rem 0.625rem', fontSize: '0.75rem', cursor: 'pointer' }}>
+                      Revoke
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="card">
+            <h3 style={{ fontWeight: '600', marginBottom: '1rem', fontSize: '0.9375rem' }}>Active Team Members ({hrUsers.length})</h3>
+            {hrUsers.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '1.5rem' }}>No team members yet</p>
+            ) : hrUsers.map((user: any) => (
+              <div key={user.user_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', background: 'var(--navy-700)', borderRadius: '8px', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--blue-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.875rem', fontWeight: '700', flexShrink: 0 }}>
+                    {user.full_name?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: '500', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {user.full_name}
+                      {user.user_id === profile?.user_id && <span style={{ fontSize: '0.7rem', background: 'rgba(37,99,235,0.2)', color: 'var(--blue-400)', borderRadius: '4px', padding: '0.1rem 0.4rem' }}>You</span>}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{user.email}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  {user.user_id !== profile?.user_id ? (
+                    <>
+                      <select value={user.role}
+                        onChange={e => { if (confirm(`Change ${user.full_name}'s role to ${e.target.value}?`)) changeRole.mutate({ userId: user.user_id, role: e.target.value }) }}
+                        className="input" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', width: 'auto' }}>
+                        <option value="hr">HR Staff</option>
+                        <option value="super_admin">Super Admin</option>
+                      </select>
+                      <button onClick={() => { if (confirm(`Remove ${user.full_name} from the HR team?`)) removeUser.mutate(user.user_id) }}
+                        style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: '6px', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>
+                        <Trash2 size={14} />
+                      </button>
+                    </>
+                  ) : (
+                    <span className={`badge ${user.role === 'super_admin' ? 'badge-purple' : 'badge-blue'}`} style={{ textTransform: 'capitalize', fontSize: '0.75rem' }}>
+                      {user.role.replace('_', ' ')}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
+      {/* Profile Tab */}
       {activeTab === 'profile' && (
-        <div className="card" style={{ maxWidth: '500px' }}>
+        <div className="card" style={{ maxWidth: '400px' }}>
           <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1.5rem' }}>My Profile</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--blue-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: '700' }}>
-              {profile?.full_name?.[0]?.toUpperCase() || 'U'}
-            </div>
-            <div>
-              <div style={{ fontWeight: '600' }}>{profile?.full_name}</div>
-              <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{profile?.role?.replace('_', ' ')}</div>
-            </div>
-          </div>
           <div className="form-group">
             <label className="label">Full Name</label>
             <input className="input" value={profileForm.full_name} onChange={e => setProfileForm({ ...profileForm, full_name: e.target.value })} />
           </div>
           <div className="form-group">
-            <label className="label">Email Address</label>
-            <input className="input" value={profileForm.email} disabled style={{ opacity: 0.6 }} />
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Email cannot be changed here</div>
+            <label className="label">Email</label>
+            <input className="input" value={profile?.email || ''} disabled style={{ opacity: 0.6 }} />
           </div>
-          <button className="btn-primary" onClick={() => profileMutation.mutate()} disabled={profileMutation.isPending}>
-            {profileMutation.isPending ? <span className="spinner" /> : <><Save size={15} /> Save Profile</>}
+          <div className="form-group">
+            <label className="label">Role</label>
+            <input className="input" value={profile?.role?.replace('_', ' ') || ''} disabled style={{ opacity: 0.6, textTransform: 'capitalize' }} />
+          </div>
+          <button className="btn-primary" onClick={() => saveProfile.mutate()} disabled={saveProfile.isPending}>
+            {saveProfile.isPending ? <span className="spinner" /> : 'Save Profile'}
           </button>
+        </div>
+      )}
+
+      {/* Embed Tab */}
+      {activeTab === 'embed' && (
+        <div className="card" style={{ maxWidth: '640px' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '0.5rem' }}>Embed Job Board</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+            Copy and paste this code into your website to display the job board directly on your careers page.
+          </p>
+          <div className="form-group">
+            <label className="label">Iframe Embed Code</label>
+            <textarea className="input" readOnly
+              value={`<iframe\n  src="${window.location.origin}/embed/jobs"\n  width="100%"\n  height="700"\n  frameborder="0"\n  style="border: none; border-radius: 8px;"\n  title="Job Openings"\n></iframe>`}
+              style={{ minHeight: '120px', fontFamily: 'monospace', fontSize: '0.8125rem', resize: 'none' }}
+              onClick={e => (e.target as HTMLTextAreaElement).select()} />
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.375rem' }}>Click the code to select it, then copy and paste into your website</div>
+          </div>
+          <div className="form-group">
+            <label className="label">Preview Link</label>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <input className="input" readOnly value={`${window.location.origin}/embed/jobs`} onClick={e => (e.target as HTMLInputElement).select()} />
+              <a href={`${window.location.origin}/embed/jobs`} target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>Preview</a>
+            </div>
+          </div>
         </div>
       )}
     </div>
