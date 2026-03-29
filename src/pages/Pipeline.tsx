@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { sendStatusEmail } from '../lib/email'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
-import { Eye } from 'lucide-react'
+import { Eye, ChevronDown, ChevronUp } from 'lucide-react'
 
 const STAGES = [
   { id: 'applied',    label: 'Applied',    color: '#2563eb', bg: 'rgba(37,99,235,0.08)',   border: 'rgba(37,99,235,0.2)' },
@@ -22,6 +22,17 @@ export default function Pipeline() {
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dragOverStage, setDragOverStage] = useState<string | null>(null)
   const [jobFilter, setJobFilter] = useState('all')
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 900)
+  const [expandedStages, setExpandedStages] = useState<Record<string, boolean>>({
+    applied: true, screening: true, interview: true, assessment: true,
+    offer: true, hired: true, rejected: false
+  })
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 900)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const { data: applications = [], isLoading } = useQuery({
     queryKey: ['pipeline-applications'],
@@ -82,8 +93,7 @@ export default function Pipeline() {
     const app = applications.find(a => a.id === draggedId)
     if (!app || app.status === stageId) return
     statusMutation.mutate({
-      id: draggedId,
-      status: stageId,
+      id: draggedId, status: stageId,
       email: app.applicant_details?.email,
       name: app.applicant_details?.full_name,
       jobTitle: app.job?.title
@@ -91,9 +101,21 @@ export default function Pipeline() {
     setDraggedId(null)
   }
 
-  function onDragEnd() {
-    setDraggedId(null)
-    setDragOverStage(null)
+  function onDragEnd() { setDraggedId(null); setDragOverStage(null) }
+
+  function toggleStage(stageId: string) {
+    setExpandedStages(prev => ({ ...prev, [stageId]: !prev[stageId] }))
+  }
+
+  function moveCandidate(appId: string, newStatus: string) {
+    const app = applications.find(a => a.id === appId)
+    if (!app) return
+    statusMutation.mutate({
+      id: appId, status: newStatus,
+      email: app.applicant_details?.email,
+      name: app.applicant_details?.full_name,
+      jobTitle: app.job?.title
+    })
   }
 
   if (isLoading) return (
@@ -102,14 +124,91 @@ export default function Pipeline() {
     </div>
   )
 
+  const CandidateCard = ({ app, stage, mobile = false }: { app: any, stage: typeof STAGES[0], mobile?: boolean }) => (
+    <div
+      draggable={!mobile}
+      onDragStart={e => !mobile && onDragStart(e, app.id)}
+      onDragEnd={!mobile ? onDragEnd : undefined}
+      style={{
+        background: draggedId === app.id ? 'var(--navy-700)' : 'var(--navy-800)',
+        border: '1px solid var(--border)',
+        borderRadius: '8px',
+        padding: mobile ? '0.875rem' : '0.625rem',
+        cursor: mobile ? 'default' : 'grab',
+        opacity: draggedId === app.id ? 0.5 : 1,
+        transition: 'all 0.15s',
+        userSelect: 'none'
+      }}
+      onMouseEnter={e => { if (!mobile && draggedId !== app.id) (e.currentTarget as HTMLElement).style.borderColor = stage.color }}
+      onMouseLeave={e => { if (!mobile) (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.375rem' }}>
+        <div style={{ width: mobile ? '32px' : '24px', height: mobile ? '32px' : '24px', borderRadius: '50%', background: stage.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: mobile ? '0.8125rem' : '0.6875rem', fontWeight: '700', color: 'white', flexShrink: 0 }}>
+          {(app.applicant_details?.full_name || 'U')[0].toUpperCase()}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: '600', fontSize: mobile ? '0.875rem' : '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {app.applicant_details?.full_name || 'Unknown'}
+          </div>
+          <div style={{ fontSize: mobile ? '0.75rem' : '0.65rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {app.job?.title}
+          </div>
+        </div>
+        <button onClick={() => navigate(`/dashboard/applicants/${app.id}`)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--blue-400)', padding: '0.125rem', flexShrink: 0 }}>
+          <Eye size={mobile ? 15 : 12} />
+        </button>
+      </div>
+
+      {app.match_score != null && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.25rem' }}>
+          <div style={{ flex: 1, height: '3px', background: 'var(--navy-700)', borderRadius: '2px', overflow: 'hidden' }}>
+            <div style={{ width: `${app.match_score}%`, height: '100%', background: app.match_score >= 70 ? '#10b981' : app.match_score >= 40 ? '#f59e0b' : '#ef4444', borderRadius: '2px' }} />
+          </div>
+          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', flexShrink: 0 }}>{app.match_score}%</span>
+        </div>
+      )}
+
+      {app.applicant_details?.skills?.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.15rem', marginBottom: mobile ? '0.5rem' : '0.375rem' }}>
+          {app.applicant_details.skills.slice(0, 2).map((s: string) => (
+            <span key={s} style={{ background: 'rgba(37,99,235,0.12)', color: '#3b82f6', borderRadius: '3px', padding: '0.1rem 0.3rem', fontSize: '0.65rem' }}>{s}</span>
+          ))}
+          {app.applicant_details.skills.length > 2 && (
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>+{app.applicant_details.skills.length - 2}</span>
+          )}
+        </div>
+      )}
+
+      {/* Mobile: show move dropdown instead of drag */}
+      {mobile && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.375rem' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(app.created_at).toLocaleDateString()}</span>
+          <select
+            value={app.status}
+            onChange={e => moveCandidate(app.id, e.target.value)}
+            style={{ fontSize: '0.75rem', padding: '0.2rem 0.4rem', background: stage.bg, border: `1px solid ${stage.border}`, color: stage.color, borderRadius: '5px', cursor: 'pointer', outline: 'none' }}>
+            {STAGES.map(s => <option key={s.id} value={s.id} style={{ background: 'var(--navy-800)', color: 'var(--text-primary)' }}>{s.label}</option>)}
+          </select>
+        </div>
+      )}
+
+      {!mobile && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{new Date(app.created_at).toLocaleDateString()}</span>
+        </div>
+      )}
+    </div>
+  )
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: isMobile ? 'auto' : 'calc(100vh - 120px)' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexShrink: 0, flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Pipeline</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-            {filtered.length} candidate{filtered.length !== 1 ? 's' : ''} · Drag cards to move between stages
+            {filtered.length} candidate{filtered.length !== 1 ? 's' : ''} · {isMobile ? 'Tap stage to expand · Use dropdown to move' : 'Drag cards to move between stages'}
           </p>
         </div>
         <select className="input" value={jobFilter} onChange={e => setJobFilter(e.target.value)} style={{ width: '200px' }}>
@@ -119,150 +218,88 @@ export default function Pipeline() {
       </div>
 
       {/* Stage summary bar */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.875rem', flexShrink: 0, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '0.875rem', flexShrink: 0, flexWrap: 'wrap' }}>
         {STAGES.map(stage => (
-          <div key={stage.id} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', background: stage.bg, border: `1px solid ${stage.border}`, borderRadius: '6px', padding: '0.25rem 0.625rem', fontSize: '0.75rem' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: stage.color }} />
+          <div key={stage.id} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', background: stage.bg, border: `1px solid ${stage.border}`, borderRadius: '6px', padding: '0.2rem 0.5rem', fontSize: '0.75rem', cursor: isMobile ? 'pointer' : 'default' }}
+            onClick={() => isMobile && toggleStage(stage.id)}>
+            <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: stage.color }} />
             <span style={{ color: stage.color, fontWeight: '600' }}>{stage.label}</span>
             <span style={{ color: stage.color, fontWeight: '700' }}>{grouped[stage.id]?.length || 0}</span>
           </div>
         ))}
       </div>
 
-      {/* Kanban Board - fills remaining height and scrolls horizontally */}
-      <div style={{
-        display: 'flex',
-        gap: '0.625rem',
-        overflowX: 'auto',
-        overflowY: 'hidden',
-        flex: 1,
-        paddingBottom: '0.5rem',
-        scrollbarWidth: 'thin',
-        scrollbarColor: 'var(--border) transparent'
-      }}>
-        {STAGES.map(stage => {
-          const cards = grouped[stage.id] || []
-          const isDragOver = dragOverStage === stage.id
-
-          return (
-            <div
-              key={stage.id}
-              onDragOver={e => onDragOver(e, stage.id)}
-              onDrop={e => onDrop(e, stage.id)}
-              onDragLeave={() => setDragOverStage(null)}
-              style={{
-                minWidth: '200px',
-                width: '200px',
-                display: 'flex',
-                flexDirection: 'column',
-                background: isDragOver ? stage.bg : 'var(--navy-900)',
-                border: `1px solid ${isDragOver ? stage.color : 'var(--border)'}`,
-                borderRadius: '10px',
-                transition: 'all 0.2s',
-                flexShrink: 0,
-                overflow: 'hidden'
-              }}>
-
-              {/* Column header */}
-              <div style={{ padding: '0.75rem 0.75rem 0.5rem', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: stage.color, flexShrink: 0 }} />
-                    <span style={{ fontWeight: '600', fontSize: '0.8125rem', color: 'var(--text-primary)' }}>{stage.label}</span>
+      {/* DESKTOP: Kanban board */}
+      {!isMobile && (
+        <div style={{ display: 'flex', gap: '0.625rem', overflowX: 'auto', overflowY: 'hidden', flex: 1, paddingBottom: '0.5rem', scrollbarWidth: 'thin', scrollbarColor: 'var(--border) transparent' }}>
+          {STAGES.map(stage => {
+            const cards = grouped[stage.id] || []
+            const isDragOver = dragOverStage === stage.id
+            return (
+              <div key={stage.id}
+                onDragOver={e => onDragOver(e, stage.id)}
+                onDrop={e => onDrop(e, stage.id)}
+                onDragLeave={() => setDragOverStage(null)}
+                style={{ minWidth: '200px', width: '200px', display: 'flex', flexDirection: 'column', background: isDragOver ? stage.bg : 'var(--navy-900)', border: `1px solid ${isDragOver ? stage.color : 'var(--border)'}`, borderRadius: '10px', transition: 'all 0.2s', flexShrink: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '0.75rem 0.75rem 0.5rem', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: stage.color }} />
+                      <span style={{ fontWeight: '600', fontSize: '0.8125rem' }}>{stage.label}</span>
+                    </div>
+                    <span style={{ background: stage.bg, border: `1px solid ${stage.border}`, color: stage.color, borderRadius: '9999px', padding: '0.1rem 0.4rem', fontSize: '0.7rem', fontWeight: '700' }}>{cards.length}</span>
                   </div>
-                  <span style={{ background: stage.bg, border: `1px solid ${stage.border}`, color: stage.color, borderRadius: '9999px', padding: '0.1rem 0.4rem', fontSize: '0.7rem', fontWeight: '700' }}>
-                    {cards.length}
-                  </span>
+                </div>
+                <div style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.375rem', overflowY: 'auto', flex: 1 }}>
+                  {cards.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '1rem 0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem', border: '1px dashed var(--border)', borderRadius: '6px' }}>Drop here</div>
+                  )}
+                  {cards.map(app => <CandidateCard key={app.id} app={app} stage={stage} />)}
                 </div>
               </div>
+            )
+          })}
+        </div>
+      )}
 
-              {/* Scrollable cards area */}
-              <div style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.375rem', overflowY: 'auto', flex: 1 }}>
-                {cards.length === 0 && (
-                  <div style={{ textAlign: 'center', padding: '1rem 0.5rem', color: 'var(--text-muted)', fontSize: '0.75rem', border: '1px dashed var(--border)', borderRadius: '6px', marginTop: '0.25rem' }}>
-                    Drop here
+      {/* MOBILE: Grouped list view */}
+      {isMobile && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+          {STAGES.map(stage => {
+            const cards = grouped[stage.id] || []
+            const isExpanded = expandedStages[stage.id]
+            return (
+              <div key={stage.id} style={{ background: 'var(--navy-900)', border: `1px solid ${isExpanded ? stage.color : 'var(--border)'}`, borderRadius: '10px', overflow: 'hidden', transition: 'border-color 0.2s' }}>
+                {/* Stage header - tap to expand/collapse */}
+                <div onClick={() => toggleStage(stage.id)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1rem', cursor: 'pointer', background: isExpanded ? stage.bg : 'transparent' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: stage.color }} />
+                    <span style={{ fontWeight: '600', fontSize: '0.9375rem', color: isExpanded ? stage.color : 'var(--text-primary)' }}>{stage.label}</span>
+                    <span style={{ background: stage.bg, border: `1px solid ${stage.border}`, color: stage.color, borderRadius: '9999px', padding: '0.15rem 0.5rem', fontSize: '0.75rem', fontWeight: '700' }}>{cards.length}</span>
+                  </div>
+                  {isExpanded ? <ChevronUp size={18} color={stage.color} /> : <ChevronDown size={18} color="var(--text-muted)" />}
+                </div>
+
+                {/* Cards */}
+                {isExpanded && (
+                  <div style={{ padding: '0.625rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {cards.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)', fontSize: '0.8125rem' }}>No candidates at this stage</div>
+                    ) : cards.map(app => <CandidateCard key={app.id} app={app} stage={stage} mobile={true} />)}
                   </div>
                 )}
-                {cards.map(app => (
-                  <div
-                    key={app.id}
-                    draggable
-                    onDragStart={e => onDragStart(e, app.id)}
-                    onDragEnd={onDragEnd}
-                    style={{
-                      background: draggedId === app.id ? 'var(--navy-700)' : 'var(--navy-800)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '7px',
-                      padding: '0.625rem',
-                      cursor: 'grab',
-                      opacity: draggedId === app.id ? 0.5 : 1,
-                      transition: 'all 0.15s',
-                      userSelect: 'none'
-                    }}
-                    onMouseEnter={e => { if (draggedId !== app.id) (e.currentTarget as HTMLElement).style.borderColor = stage.color }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)' }}>
-
-                    {/* Avatar + name */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.375rem' }}>
-                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: stage.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6875rem', fontWeight: '700', color: 'white', flexShrink: 0 }}>
-                        {(app.applicant_details?.full_name || 'U')[0].toUpperCase()}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: '600', fontSize: '0.75rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {app.applicant_details?.full_name || 'Unknown'}
-                        </div>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {app.job?.title}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Match score bar */}
-                    {app.match_score != null && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginBottom: '0.25rem' }}>
-                        <div style={{ flex: 1, height: '3px', background: 'var(--navy-700)', borderRadius: '2px', overflow: 'hidden' }}>
-                          <div style={{ width: `${app.match_score}%`, height: '100%', background: app.match_score >= 70 ? '#10b981' : app.match_score >= 40 ? '#f59e0b' : '#ef4444', borderRadius: '2px' }} />
-                        </div>
-                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', flexShrink: 0 }}>{app.match_score}%</span>
-                      </div>
-                    )}
-
-                    {/* Skills */}
-                    {app.applicant_details?.skills?.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.15rem', marginBottom: '0.375rem' }}>
-                        {app.applicant_details.skills.slice(0, 2).map((s: string) => (
-                          <span key={s} style={{ background: 'rgba(37,99,235,0.12)', color: '#3b82f6', borderRadius: '3px', padding: '0.1rem 0.3rem', fontSize: '0.6rem' }}>{s}</span>
-                        ))}
-                        {app.applicant_details.skills.length > 2 && (
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.6rem' }}>+{app.applicant_details.skills.length - 2}</span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Date + view button */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                        {new Date(app.created_at).toLocaleDateString()}
-                      </span>
-                      <button
-                        onClick={() => navigate(`/dashboard/applicants/${app.id}`)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--blue-400)', padding: '0.125rem', display: 'flex', alignItems: 'center' }}
-                        title="View Profile">
-                        <Eye size={12} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
 
-      {/* Scroll hint */}
-      <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.375rem', flexShrink: 0 }}>
-        💡 Drag and drop cards to move candidates · Scroll right to see all stages · Status emails sent automatically
-      </div>
+      {!isMobile && (
+        <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', flexShrink: 0 }}>
+          💡 Drag and drop cards to move candidates · Scroll right to see all stages · Status emails sent automatically
+        </div>
+      )}
     </div>
   )
 }
