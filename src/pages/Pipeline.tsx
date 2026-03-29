@@ -59,7 +59,7 @@ export default function Pipeline() {
       const { error } = await supabase.from('applications').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
       if (error) throw error
       if (email && name) {
-        await sendStatusEmail(status, email, name, jobTitle, || '', id)
+        await sendStatusEmail(status, email, name, jobTitle || '', id)
       }
     },
     onSuccess: () => {
