@@ -37,12 +37,12 @@ export async function sendStatusEmail(
 ) {
   const eventMap: Record<string, string> = {
     applied: 'application_received',
-    screening: 'application_received',
-    interview: 'shortlisted',
-    assessment: 'shortlisted',
+    screening: 'shortlisted',
+    interview: 'interview_scheduled',
+    assessment: 'assessment',
     offer: 'offer_sent',
     rejected: 'rejected_application',
-    hired: 'offer_sent',
+    hired: 'hired',
   }
 
   const event = eventMap[status]
