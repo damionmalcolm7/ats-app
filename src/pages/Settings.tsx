@@ -19,6 +19,8 @@ export default function Settings() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState('hr')
   const [uploading, setUploading] = useState(false)
+  const [editingUser, setEditingUser] = useState<any>(null)
+  const [editForm, setEditForm] = useState({ full_name: '', job_title: '' })
 
   const { data: savedSettings, isLoading: settingsLoading } = useQuery({
     queryKey: ['settings'],
@@ -149,6 +151,22 @@ export default function Settings() {
       if (error) throw error
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['hr-users'] }); toast.success('Role updated') },
+    onError: (err: any) => toast.error(err.message)
+  })
+
+  const editUser = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('profiles').update({
+        full_name: editForm.full_name,
+        job_title: editForm.job_title
+      }).eq('user_id', editingUser.user_id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hr-users'] })
+      toast.success('Profile updated!')
+      setEditingUser(null)
+    },
     onError: (err: any) => toast.error(err.message)
   })
 
@@ -349,6 +367,11 @@ export default function Settings() {
                         <option value="hr">HR Staff</option>
                         <option value="super_admin">Super Admin</option>
                       </select>
+                      <button onClick={() => { setEditingUser(user); setEditForm({ full_name: user.full_name || '', job_title: user.job_title || '' }) }}
+                        className="btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                        title="Edit profile">
+                        ✏️
+                      </button>
                       <button onClick={() => { if (confirm(`Remove ${user.full_name} from the HR team?`)) removeUser.mutate(user.user_id) }}
                         style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: '6px', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>
                         <Trash2 size={14} />
@@ -418,6 +441,45 @@ export default function Settings() {
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
               <input className="input" readOnly value={`${window.location.origin}/embed/jobs`} onClick={e => (e.target as HTMLInputElement).select()} />
               <a href={`${window.location.origin}/embed/jobs`} target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ whiteSpace: 'nowrap' }}>Preview</a>
+            </div>
+          </div>
+        </div>
+      )}
+    {/* Edit User Modal */}
+      {editingUser && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setEditingUser(null)}>
+          <div className="modal" style={{ maxWidth: '420px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
+              <h2 style={{ fontSize: '1.125rem', fontWeight: '600' }}>Edit Profile</h2>
+              <button onClick={() => setEditingUser(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '1.25rem' }}>×</button>
+            </div>
+            <div style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem', padding: '0.75rem', background: 'var(--navy-700)', borderRadius: '8px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--blue-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: '700', flexShrink: 0 }}>
+                  {editingUser.full_name?.[0]?.toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ fontWeight: '500', fontSize: '0.875rem' }}>{editingUser.email}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{editingUser.role?.replace('_', ' ')}</div>
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="label">Full Name</label>
+                <input className="input" value={editForm.full_name} onChange={e => setEditForm({ ...editForm, full_name: e.target.value })} placeholder="Full name" />
+              </div>
+              <div className="form-group">
+                <label className="label">Job Title</label>
+                <input className="input" value={editForm.job_title} onChange={e => setEditForm({ ...editForm, job_title: e.target.value })} placeholder="e.g. Senior HR Officer" />
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  This appears in emails sent to applicants
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', padding: '1.25rem 1.5rem', borderTop: '1px solid var(--border)' }}>
+              <button className="btn-secondary" onClick={() => setEditingUser(null)}>Cancel</button>
+              <button className="btn-primary" onClick={() => editUser.mutate()} disabled={editUser.isPending || !editForm.full_name}>
+                {editUser.isPending ? <span className="spinner" /> : 'Save Changes'}
+              </button>
             </div>
           </div>
         </div>
