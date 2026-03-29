@@ -23,6 +23,7 @@ interface Job {
   status: 'draft' | 'active' | 'paused' | 'closed'
   created_by: string
   created_at: string
+  hiring_lead?: string
 }
 
 interface Props {
