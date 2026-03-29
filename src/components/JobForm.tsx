@@ -35,7 +35,7 @@ const emptyForm: any = {
   title: '', department: '', location: '', location_type: 'hybrid',
   employment_type: 'full-time', salary_min: '', salary_max: '',
   description: '', required_skills: [] as string[], experience_level: 'mid',
-  deadline: '', status: 'draft'
+  deadline: '', status: 'draft', hiring_lead: ''
 }
 
 export default function JobForm({ job, onClose, onSuccess }: Props) {
@@ -45,6 +45,17 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
   const [skillInput, setSkillInput] = useState('')
   const [activeTab, setActiveTab] = useState('details')
   const [questions, setQuestions] = useState<JobQuestion[]>([])
+  const { data: hrUsers = [] } = useQuery({
+  queryKey: ['hr-users'],
+  queryFn: async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('user_id, full_name, email, role')
+      .in('role', ['hr', 'super_admin'])
+      .order('full_name')
+    return data || []
+  }
+})
 
   useEffect(() => {
     if (job) {
@@ -54,7 +65,7 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
         salary_min: job.salary_min?.toString() || '', salary_max: job.salary_max?.toString() || '',
         description: job.description, required_skills: job.required_skills || [],
         experience_level: job.experience_level, deadline: job.deadline?.split('T')[0] || '',
-        status: job.status
+        status: job.status, hiring_lead: job.hiring_lead || ''
       })
       // Load existing questions
       supabase.from('job_questions').select('*').eq('job_id', job.id).order('order_index').then(({ data }) => {
@@ -70,7 +81,8 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
         salary_min: form.salary_min ? Number(form.salary_min) : null,
         salary_max: form.salary_max ? Number(form.salary_max) : null,
         deadline: form.deadline || null,
-        created_by: profile?.user_id
+        created_by: profile?.user_id,
+hiring_lead: form.hiring_lead || null
       }
 
       let jobId = job?.id
@@ -231,6 +243,20 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
                     <option value="paused">Paused</option>
                     <option value="closed">Closed</option>
                   </select>
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="label">Hiring Lead</label>
+                <select className="input" value={form.hiring_lead} onChange={e => setForm({ ...form, hiring_lead: e.target.value })}>
+                  <option value="">— Select Hiring Lead —</option>
+                  {hrUsers.map((u: any) => (
+                    <option key={u.user_id} value={u.user_id}>
+                      {u.full_name} ({u.role.replace('_', ' ')})
+                    </option>
+                  ))}
+                </select>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                  The hiring lead will oversee candidate selection for this role
                 </div>
               </div>
 
