@@ -58,8 +58,8 @@ export default function Pipeline() {
     mutationFn: async ({ id, status, email, name, jobTitle }: any) => {
       const { error } = await supabase.from('applications').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
       if (error) throw error
-      if (email && name && jobTitle) {
-        await sendStatusEmail(status, email, name, jobTitle, id)
+      if (email && name) {
+        await sendStatusEmail(status, email, name, jobTitle, || '', id)
       }
     },
     onSuccess: () => {
