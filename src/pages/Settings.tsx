@@ -12,7 +12,10 @@ export default function Settings() {
   const isSuperAdmin = profile?.role === 'super_admin'
   const [activeTab, setActiveTab] = useState('company')
   const [settings, setSettings] = useState<any>(null)
-  const [profileForm, setProfileForm] = useState({ full_name: profile?.full_name || '' })
+  const [profileForm, setProfileForm] = useState({
+    full_name: profile?.full_name || '',
+    job_title: (profile as any)?.job_title || ''
+  })
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState('hr')
   const [uploading, setUploading] = useState(false)
@@ -26,12 +29,23 @@ export default function Settings() {
     }
   })
 
+  // Load full profile including job_title
+  useQuery({
+    queryKey: ['my-profile', profile?.user_id],
+    queryFn: async () => {
+      const { data } = await supabase.from('profiles').select('*').eq('user_id', profile?.user_id).single()
+      if (data) setProfileForm({ full_name: data.full_name || '', job_title: data.job_title || '' })
+      return data
+    },
+    enabled: !!profile?.user_id
+  })
+
   const { data: hrUsers = [] } = useQuery({
     queryKey: ['hr-users'],
     queryFn: async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('user_id, full_name, email, role, created_at')
+        .select('user_id, full_name, email, role, job_title, created_at')
         .in('role', ['hr', 'super_admin'])
         .order('full_name')
       return data || []
@@ -63,10 +77,16 @@ export default function Settings() {
 
   const saveProfile = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('profiles').update({ full_name: profileForm.full_name }).eq('user_id', profile?.user_id)
+      const { error } = await supabase.from('profiles').update({
+        full_name: profileForm.full_name,
+        job_title: profileForm.job_title
+      }).eq('user_id', profile?.user_id)
       if (error) throw error
     },
-    onSuccess: () => toast.success('Profile updated!'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-profile', profile?.user_id] })
+      toast.success('Profile updated!')
+    },
     onError: (err: any) => toast.error(err.message)
   })
 
@@ -205,7 +225,6 @@ export default function Settings() {
                 <label className="label">Company Name</label>
                 <input className="input" value={settings.company_name || ''} onChange={e => isSuperAdmin && setSettings({ ...settings, company_name: e.target.value })} disabled={!isSuperAdmin} style={{ opacity: isSuperAdmin ? 1 : 0.7 }} />
               </div>
-
               <div className="form-group">
                 <label className="label">Company Logo</label>
                 {settings.company_logo ? (
@@ -222,22 +241,18 @@ export default function Settings() {
                   </label>
                 )}
               </div>
-
               <div className="form-group">
                 <label className="label">Sender Name</label>
                 <input className="input" value={settings.sender_name || ''} onChange={e => isSuperAdmin && setSettings({ ...settings, sender_name: e.target.value })} disabled={!isSuperAdmin} style={{ opacity: isSuperAdmin ? 1 : 0.7 }} />
               </div>
-
               <div className="form-group">
                 <label className="label">Sender Email</label>
                 <input className="input" type="email" value={settings.sender_email || ''} onChange={e => isSuperAdmin && setSettings({ ...settings, sender_email: e.target.value })} disabled={!isSuperAdmin} style={{ opacity: isSuperAdmin ? 1 : 0.7 }} />
               </div>
-
               <div className="form-group">
                 <label className="label">Careers Page URL</label>
                 <input className="input" value={settings.careers_url || ''} onChange={e => isSuperAdmin && setSettings({ ...settings, careers_url: e.target.value })} disabled={!isSuperAdmin} style={{ opacity: isSuperAdmin ? 1 : 0.7 }} />
               </div>
-
               {isSuperAdmin && (
                 <button className="btn-primary" onClick={() => saveSettings.mutate()} disabled={saveSettings.isPending}>
                   {saveSettings.isPending ? <span className="spinner" /> : 'Save Settings'}
@@ -248,7 +263,7 @@ export default function Settings() {
         </div>
       )}
 
-      {/* Team Members Tab - Super Admin only */}
+      {/* Team Members Tab */}
       {activeTab === 'users' && isSuperAdmin && (
         <div style={{ maxWidth: '700px' }}>
           <div className="card" style={{ marginBottom: '1.25rem' }}>
@@ -320,7 +335,9 @@ export default function Settings() {
                       {user.full_name}
                       {user.user_id === profile?.user_id && <span style={{ fontSize: '0.7rem', background: 'rgba(37,99,235,0.2)', color: 'var(--blue-400)', borderRadius: '4px', padding: '0.1rem 0.4rem' }}>You</span>}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{user.email}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      {user.job_title ? `${user.job_title} · ` : ''}{user.email}
+                    </div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -358,12 +375,22 @@ export default function Settings() {
             <input className="input" value={profileForm.full_name} onChange={e => setProfileForm({ ...profileForm, full_name: e.target.value })} />
           </div>
           <div className="form-group">
+            <label className="label">Job Title</label>
+            <input className="input" value={profileForm.job_title} onChange={e => setProfileForm({ ...profileForm, job_title: e.target.value })} placeholder="e.g. Senior HR Officer" />
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+              This is your actual position at the organization — it will appear in emails you send to applicants
+            </div>
+          </div>
+          <div className="form-group">
             <label className="label">Email</label>
             <input className="input" value={profile?.email || ''} disabled style={{ opacity: 0.6 }} />
           </div>
           <div className="form-group">
-            <label className="label">Role</label>
+            <label className="label">System Role</label>
             <input className="input" value={profile?.role?.replace('_', ' ') || ''} disabled style={{ opacity: 0.6, textTransform: 'capitalize' }} />
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+              Your system access level — contact your Super Admin to change this
+            </div>
           </div>
           <button className="btn-primary" onClick={() => saveProfile.mutate()} disabled={saveProfile.isPending}>
             {saveProfile.isPending ? <span className="spinner" /> : 'Save Profile'}
