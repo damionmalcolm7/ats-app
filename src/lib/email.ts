@@ -39,6 +39,7 @@ export async function sendStatusEmail(
     applied: 'application_received',
     screening: 'application_received',
     interview: 'shortlisted',
+    assessment: 'shortlisted',
     offer: 'offer_sent',
     rejected: 'rejected_application',
     hired: 'offer_sent',
