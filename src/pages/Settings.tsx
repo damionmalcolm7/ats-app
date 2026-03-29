@@ -155,12 +155,12 @@ export default function Settings() {
     }
   }
 
-  const tabs = [
-    { id: 'company', label: 'Company' },
-    { id: 'users', label: 'Team Members' },
-    { id: 'profile', label: 'My Profile' },
-    { id: 'embed', label: 'Embed Code' },
-  ]
+const tabs = [
+  { id: 'company', label: 'Company' },
+  ...(profile?.role === 'super_admin' ? [{ id: 'users', label: 'Team Members' }] : []),
+  { id: 'profile', label: 'My Profile' },
+  { id: 'embed', label: 'Embed Code' },
+]
 
   return (
     <div>
