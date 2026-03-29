@@ -82,7 +82,7 @@ export default function Settings() {
       await sendEmail({
         to: inviteEmail.trim(),
         subject: `You've been invited to join ${settings?.company_name || 'Our Company'} ATS`,
-        body: `You have been invited to join the ${settings?.company_name || 'Our Company'} Applicant Tracking System as ${roleLabel}.\n\nClick the link below to set up your account:\n${inviteUrl}\n\nThis invite expires in 7 days.\n\nBest regards,\n${profile?.full_name || 'HR Team'}`,
+        body: `You have been invited to join the ${settings?.company_name || 'Our Company'} Applicant Tracking System as ${roleLabel}.\n\nClick the button below to set up your account:\n\n<a href="${inviteUrl}" style="display:inline-block;background:#1B3A6B;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">Set Up My Account</a>\n\nThis invite expires in 7 days.\n\nBest regards,\n${profile?.full_name || 'HR Team'}`,
         application_id: null,
         hr_name: profile?.full_name || 'HR Team'
       })
