@@ -3,10 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 import {
   LayoutDashboard, Briefcase, Users, GitBranch,
   Calendar, Mail, BarChart2, Globe, Settings,
-  Bell, ChevronDown, LogOut, User, Menu, X
+  Bell, ChevronDown, LogOut, User, Menu, X, Sun, Moon
 } from 'lucide-react'
 
 const navItems = [
@@ -22,6 +23,7 @@ const navItems = [
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth()
+  const { theme, toggleTheme } = useTheme()
 
   const { data: settings } = useQuery({
     queryKey: ['settings'],
