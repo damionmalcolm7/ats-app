@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { ArrowLeft, Mail, Phone, FileText, Star, Tag, Plus, X, Download, Calendar, Upload } from 'lucide-react'
 import ScheduleInterview from '../components/ScheduleInterview'
 import CandidateReviews from '../components/CandidateReviews'
+import InterviewFeedback from '../components/InterviewFeedback'
 import SendEmailModal from '../components/SendEmailModal'
 import RequestDocument from '../components/RequestDocument'
 
