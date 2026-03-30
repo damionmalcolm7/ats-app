@@ -9,7 +9,6 @@ import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import Jobs from './pages/Jobs'
 import Applicants from './pages/Applicants'
-import Pipeline from './pages/Pipeline'
 import ApplicantProfile from './pages/ApplicantProfile'
 import Interviews from './pages/Interviews'
 import EmailTemplates from './pages/EmailTemplates'
@@ -44,7 +43,7 @@ export default function App() {
             <Route path="/dashboard/jobs" element={<ProtectedRoute allowedRoles={['hr','super_admin']}><Layout><Jobs /></Layout></ProtectedRoute>} />
             <Route path="/dashboard/applicants" element={<ProtectedRoute allowedRoles={['hr','super_admin']}><Layout><Applicants /></Layout></ProtectedRoute>} />
             <Route path="/dashboard/applicants/:id" element={<ProtectedRoute allowedRoles={['hr','super_admin']}><Layout><ApplicantProfile /></Layout></ProtectedRoute>} />
-            <Route path="/dashboard/pipeline" element={<ProtectedRoute allowedRoles={['hr','super_admin']}><Layout><Pipeline /></Layout></ProtectedRoute>} />
+            <Route path="/dashboard/pipeline" element={<ProtectedRoute allowedRoles={['hr','super_admin']}><Layout><Applicants /></Layout></ProtectedRoute>} />
             <Route path="/dashboard/interviews" element={<ProtectedRoute allowedRoles={['hr','super_admin']}><Layout><Interviews /></Layout></ProtectedRoute>} />
             <Route path="/dashboard/email-templates" element={<ProtectedRoute allowedRoles={['hr','super_admin']}><Layout><EmailTemplates /></Layout></ProtectedRoute>} />
             <Route path="/dashboard/analytics" element={<ProtectedRoute allowedRoles={['hr','super_admin']}><Layout><Analytics /></Layout></ProtectedRoute>} />
