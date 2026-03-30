@@ -388,6 +388,7 @@ export default function Applicants() {
                   <th>Experience</th>
                   <th>Match Score</th>
                   <th>Stage</th>
+                  <th>Source</th>
                   <th>Applied</th>
                   <th>Actions</th>
                 </tr>
@@ -448,6 +449,11 @@ export default function Applicants() {
                           style={{ background: 'transparent', border: 'none', cursor: 'pointer', outline: 'none', textTransform: 'capitalize' }}>
                           {STATUSES.map(s => <option key={s} value={s} style={{ background: 'var(--navy-800)' }}>{s}</option>)}
                         </select>
+                      </td>
+                      <td style={{ color: 'var(--text-secondary)', fontSize: '0.8125rem' }}>
+                        {app.source ? (
+                          <span style={{ background: 'rgba(37,99,235,0.1)', color: '#3b82f6', borderRadius: '5px', padding: '0.15rem 0.5rem', fontSize: '0.75rem' }}>{app.source}</span>
+                        ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                       </td>
                       <td style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
                         {new Date(app.created_at).toLocaleDateString()}
