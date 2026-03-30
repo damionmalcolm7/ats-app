@@ -337,7 +337,6 @@ export default function Analytics() {
                     ) : <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>No interviews yet</div>}
                   </div>
                 </div>
-                </div>
 
                 {/* Source Tracking Chart */}
                 <div style={{ marginTop: '1rem' }}>
