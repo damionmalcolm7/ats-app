@@ -20,6 +20,7 @@ export default function Applicants() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [jobFilter, setJobFilter] = useState('all')
   const [minScore, setMinScore] = useState(0)
+  const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false)
   const [showScreening, setShowScreening] = useState(false)
   const [shortlistThreshold, setShortlistThreshold] = useState(70)
   const [rejectThreshold, setRejectThreshold] = useState(40)
@@ -50,7 +51,19 @@ export default function Applicants() {
           .single()
         return { ...app, applicant_details: details }
       }))
-      return enriched as any[]
+
+      // Detect duplicates — flag applicants with same email appearing more than once
+      const emailCount: Record<string, number> = {}
+      enriched.forEach(app => {
+        const email = app.applicant_details?.email
+        if (email) emailCount[email] = (emailCount[email] || 0) + 1
+      })
+      const withDuplicates = enriched.map(app => ({
+        ...app,
+        is_duplicate: emailCount[app.applicant_details?.email] > 1
+      }))
+
+      return withDuplicates as any[]
     }
   })
 
@@ -217,7 +230,8 @@ export default function Applicants() {
     const matchStatus = statusFilter === 'all' || a.status === statusFilter
     const matchJob = jobFilter === 'all' || a.job_id === jobFilter
     const matchScore = minScore === 0 || (a.match_score != null && a.match_score >= minScore)
-    return matchSearch && matchStatus && matchJob && matchScore
+    const matchDuplicate = !showDuplicatesOnly || a.is_duplicate
+    return matchSearch && matchStatus && matchJob && matchScore && matchDuplicate
   })
 
   const allSelected = filtered.length > 0 && filtered.every(a => selectedIds.includes(a.id))
@@ -365,7 +379,26 @@ export default function Applicants() {
             {minScore > 0 ? `${minScore}%+` : 'Any'}
           </span>
         </div>
+        <button
+          onClick={() => setShowDuplicatesOnly(!showDuplicatesOnly)}
+          style={{ background: showDuplicatesOnly ? 'rgba(245,158,11,0.15)' : 'var(--navy-800)', border: `1px solid ${showDuplicatesOnly ? 'rgba(245,158,11,0.4)' : 'var(--border)'}`, color: showDuplicatesOnly ? '#f59e0b' : 'var(--text-muted)', borderRadius: '8px', padding: '0.375rem 0.875rem', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: showDuplicatesOnly ? '600' : '400', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+          ⚠ {showDuplicatesOnly ? 'Showing Duplicates' : 'Show Duplicates'} ({applications.filter(a => a.is_duplicate).length})
+        </button>
       </div>
+
+      {/* Duplicate warning banner */}
+      {applications.filter(a => a.is_duplicate).length > 0 && !showDuplicatesOnly && (
+        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#f59e0b' }}>
+            <span>⚠</span>
+            <span><strong>{applications.filter(a => a.is_duplicate).length}</strong> duplicate application{applications.filter(a => a.is_duplicate).length !== 1 ? 's' : ''} detected — same applicant has applied multiple times</span>
+          </div>
+          <button onClick={() => setShowDuplicatesOnly(true)}
+            style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)', color: '#f59e0b', borderRadius: '6px', padding: '0.25rem 0.75rem', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: '600' }}>
+            View Duplicates
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -404,11 +437,18 @@ export default function Applicants() {
                       </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--blue-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.875rem', fontWeight: '600', flexShrink: 0 }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: app.is_duplicate ? '#f59e0b' : 'var(--blue-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.875rem', fontWeight: '600', flexShrink: 0 }}>
                             {(app.applicant_details?.full_name || 'U')[0].toUpperCase()}
                           </div>
                           <div>
-                            <div style={{ fontWeight: '500' }}>{app.applicant_details?.full_name || 'Unknown'}</div>
+                            <div style={{ fontWeight: '500', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                              {app.applicant_details?.full_name || 'Unknown'}
+                              {app.is_duplicate && (
+                                <span title="This applicant has multiple applications" style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)', color: '#f59e0b', borderRadius: '4px', padding: '0.1rem 0.375rem', fontSize: '0.65rem', fontWeight: '600' }}>
+                                  ⚠ Duplicate
+                                </span>
+                              )}
+                            </div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{app.applicant_details?.email}</div>
                           </div>
                         </div>
