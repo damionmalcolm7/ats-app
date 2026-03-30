@@ -79,3 +79,68 @@ textarea.input { resize: vertical; min-height: 100px; }
   .btn-primary, .btn-secondary { font-size: 0.8125rem !important; padding: 0.5rem 0.875rem !important; }
   .badge { font-size: 0.7rem !important; }
 }
+
+/* ── Light Mode ── */
+[data-theme="light"] {
+  --navy-950: #f0f4f8;
+  --navy-900: #e2e8f0;
+  --navy-800: #ffffff;
+  --navy-700: #f1f5f9;
+  --navy-600: #cbd5e1;
+  --blue-500: #2563eb;
+  --blue-400: #3b82f6;
+  --accent: #2563eb;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border: #e2e8f0;
+  --card: #ffffff;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+}
+
+[data-theme="light"] body {
+  background-color: #f0f4f8;
+}
+
+[data-theme="light"] .input {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  color: #0f172a;
+}
+
+[data-theme="light"] .input::placeholder {
+  color: #94a3b8;
+}
+
+[data-theme="light"] .btn-secondary {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  color: #0f172a;
+}
+
+[data-theme="light"] .btn-secondary:hover {
+  background: #f1f5f9;
+}
+
+[data-theme="light"] .modal {
+  background: #ffffff;
+}
+
+[data-theme="light"] .sidebar-link {
+  color: #475569;
+}
+
+[data-theme="light"] .sidebar-link:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: #e2e8f0;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
