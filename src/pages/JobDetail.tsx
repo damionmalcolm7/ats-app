@@ -128,6 +128,7 @@ export default function JobDetail() {
   })
 
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [source, setSource] = useState('')
 
   async function handleResumeUpload(file: File) {
     setResumeFile(file)
@@ -210,7 +211,7 @@ export default function JobDetail() {
       await supabase.from('profiles').upsert({ user_id: applicantId, full_name: form.full_name, email: form.email, role: 'applicant' }, { onConflict: 'user_id' })
 
       const { data: appData, error: appError } = await supabase.from('applications').insert({
-        job_id: id, applicant_id: applicantId, cover_letter: form.cover_letter, status: 'applied'
+        job_id: id, applicant_id: applicantId, cover_letter: form.cover_letter, status: 'applied', source: source || 'Direct'
       }).select().single()
       if (appError) throw appError
 
@@ -515,6 +516,24 @@ export default function JobDetail() {
                 ))}
               </div>
             )}
+
+            {/* Source */}
+            <div className="form-group">
+              <label className="label">How did you hear about us?</label>
+              <select className="input" value={source} onChange={e => setSource(e.target.value)}>
+                <option value="">— Select an option —</option>
+                <option value="Company Website">Company Website</option>
+                <option value="LinkedIn">LinkedIn</option>
+                <option value="Indeed">Indeed</option>
+                <option value="Referral">Referral from someone</option>
+                <option value="Job Fair">Job Fair</option>
+                <option value="Newspaper">Newspaper / Print</option>
+                <option value="Social Media">Social Media</option>
+                <option value="University">University / Campus</option>
+                <option value="Recruitment Agency">Recruitment Agency</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
 
             {/* Cover letter */}
             <div className="form-group">
