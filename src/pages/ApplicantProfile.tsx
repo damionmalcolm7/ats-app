@@ -402,6 +402,14 @@ export default function ApplicantProfile() {
                       )}
                     </div>
                   </div>
+
+                  {/* Interview Feedback */}
+                  <div style={{ marginTop: '0.875rem', borderTop: '1px solid var(--border)', paddingTop: '0.875rem' }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Interview Feedback
+                    </div>
+                    <InterviewFeedback interviewId={iv.id} applicationId={id!} />
+                  </div>
                 </div>
               ))}
             </div>
