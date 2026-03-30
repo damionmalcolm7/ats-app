@@ -105,9 +105,11 @@ export default function RichTextEditor({ value, onChange, placeholder = 'Start t
         .ProseMirror p { margin: 0 0 0.5rem; }
         .ProseMirror h2 { font-size: 1.125rem; font-weight: 700; margin: 0.875rem 0 0.375rem; color: var(--text-primary); }
         .ProseMirror h3 { font-size: 1rem; font-weight: 600; margin: 0.75rem 0 0.375rem; color: var(--text-primary); }
-        .ProseMirror ul { padding-left: 1.25rem; margin: 0.375rem 0; }
-        .ProseMirror ol { padding-left: 1.25rem; margin: 0.375rem 0; }
-        .ProseMirror li { margin-bottom: 0.25rem; color: var(--text-secondary); }
+        .ProseMirror ul { padding-left: 1.5rem; margin: 0.375rem 0; list-style-type: disc !important; }
+        .ProseMirror ol { padding-left: 1.5rem; margin: 0.375rem 0; list-style-type: decimal !important; }
+        .ProseMirror ul li { margin-bottom: 0.25rem; color: var(--text-secondary); display: list-item !important; list-style-type: disc !important; }
+        .ProseMirror ol li { margin-bottom: 0.25rem; color: var(--text-secondary); display: list-item !important; list-style-type: decimal !important; }
+        .ProseMirror ul li p, .ProseMirror ol li p { margin: 0; }
         .ProseMirror blockquote { border-left: 3px solid var(--blue-500); padding-left: 0.875rem; color: var(--text-muted); margin: 0.5rem 0; }
         .ProseMirror hr { border: none; border-top: 1px solid var(--border); margin: 0.875rem 0; }
         .ProseMirror strong { color: var(--text-primary); }
