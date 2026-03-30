@@ -47,7 +47,7 @@ export default function Analytics() {
     queryKey: ['analytics'],
     queryFn: async () => {
       const [apps, jobs, interviews] = await Promise.all([
-        supabase.from('applications').select('status, created_at, match_score'),
+        supabase.from('applications').select('status, created_at, match_score, source'),
         supabase.from('jobs').select('status, department, created_at'),
         supabase.from('interviews').select('format, status, scheduled_at'),
       ])
@@ -66,16 +66,24 @@ export default function Analytics() {
       const ivMap: Record<string, number> = {}
       ;(interviews.data || []).forEach(iv => { ivMap[iv.format] = (ivMap[iv.format] || 0) + 1 })
       const ivData = Object.entries(ivMap).map(([name, value]) => ({ name, value }))
+
+      // Source tracking
+      const sourceMap: Record<string, number> = {}
+      applications.forEach(a => {
+        const src = (a as any).source || 'Direct'
+        sourceMap[src] = (sourceMap[src] || 0) + 1
+      })
+      const sourceData = Object.entries(sourceMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
       const totalApps = applications.length
       const hired = applications.filter(a => a.status === 'hired').length
       const offers = applications.filter(a => a.status === 'offer' || a.status === 'hired').length
       const avgMatchScore = applications.filter(a => a.match_score != null).reduce((s, a) => s + (a.match_score || 0), 0) / (applications.filter(a => a.match_score != null).length || 1)
-      return { funnelData, deptData, monthlyData, ivData, totalApps, hired, offers, avgMatchScore: Math.round(avgMatchScore), activeJobs: allJobs.filter(j => j.status === 'active').length }
+      return { funnelData, deptData, monthlyData, ivData, sourceData, totalApps, hired, offers, avgMatchScore: Math.round(avgMatchScore), activeJobs: allJobs.filter(j => j.status === 'active').length }
     }
   })
 
   function exportCSV() {
-    const headers = ['Applicant Name', 'Email', 'Phone', 'Job Title', 'Department', 'Location', 'Job Type', 'Status', 'Match Score', 'Applied Date']
+    const headers = ['Applicant Name', 'Email', 'Phone', 'Job Title', 'Department', 'Location', 'Job Type', 'Status', 'Match Score', 'Source', 'Applied Date']
     const rows = reportData.map(r => [
       r.applicant_details?.full_name || '', r.applicant_details?.email || '', r.applicant_details?.phone || '',
       r.job?.title || '', r.job?.department || '', r.job?.location || '', r.job?.employment_type || '',
@@ -180,7 +188,7 @@ export default function Analytics() {
 
       (doc as any).autoTable({
         startY,
-        head: [['Applicant Name', 'Email', 'Job Title', 'Department', 'Location', 'Type', 'Status', 'Match Score', 'Applied Date']],
+        head: [['Applicant Name', 'Email', 'Job Title', 'Department', 'Location', 'Type', 'Status', 'Match Score', 'Source', 'Applied Date']],
         body: reportData.map(r => [
           r.applicant_details?.full_name || '—',
           r.applicant_details?.email || '—',
@@ -190,6 +198,7 @@ export default function Analytics() {
           r.job?.employment_type || '—',
           (r.status || '—').charAt(0).toUpperCase() + (r.status || '').slice(1),
           r.match_score != null ? `${r.match_score}%` : '—',
+          r.source || 'Direct',
           new Date(r.created_at).toLocaleDateString()
         ]),
         headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: 'bold', fontSize: 8 },
@@ -328,6 +337,31 @@ export default function Analytics() {
                     ) : <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>No interviews yet</div>}
                   </div>
                 </div>
+                </div>
+
+                {/* Source Tracking Chart */}
+                <div style={{ marginTop: '1rem' }}>
+                  <div style={{ background: 'white', padding: '1rem', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
+                    <h3 style={{ fontWeight: '600', marginBottom: '1rem', color: '#333', fontSize: '0.9375rem' }}>Applications by Source</h3>
+                    {analytics?.sourceData && analytics.sourceData.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                        {analytics.sourceData.map((s: any, i: number) => {
+                          const total = analytics.sourceData.reduce((sum: number, x: any) => sum + x.value, 0)
+                          const pct = Math.round((s.value / total) * 100)
+                          return (
+                            <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                              <div style={{ width: '120px', fontSize: '0.8125rem', color: '#555', flexShrink: 0 }}>{s.name}</div>
+                              <div style={{ flex: 1, height: '20px', background: '#f0f0f0', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{ width: `${pct}%`, height: '100%', background: ['#2563eb','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#ec4899','#f97316','#14b8a6','#a855f7'][i % 10], borderRadius: '4px', transition: 'width 0.3s' }} />
+                              </div>
+                              <div style={{ width: '60px', fontSize: '0.8125rem', color: '#555', textAlign: 'right', flexShrink: 0 }}>{s.value} ({pct}%)</div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ) : <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>No source data yet</div>}
+                  </div>
+                </div>
               </div>
             </>
           )}
@@ -392,6 +426,7 @@ export default function Analytics() {
                       <th>Type</th>
                       <th>Status</th>
                       <th>Match Score</th>
+                      <th>Source</th>
                       <th>Applied Date</th>
                     </tr>
                   </thead>
@@ -421,6 +456,9 @@ export default function Analytics() {
                               <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{r.match_score}%</span>
                             </div>
                           ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                        </td>
+                        <td>
+                          {r.source ? <span style={{ background: 'rgba(37,99,235,0.1)', color: '#3b82f6', borderRadius: '5px', padding: '0.15rem 0.5rem', fontSize: '0.75rem' }}>{r.source}</span> : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                         </td>
                         <td style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>{new Date(r.created_at).toLocaleDateString()}</td>
                       </tr>
