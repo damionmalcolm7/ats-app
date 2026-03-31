@@ -109,16 +109,21 @@ export default function Layout({ children }: { children: ReactNode }) {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             {/* Theme toggle */}
-            <button onClick={toggleTheme}
-              style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--text-secondary)', padding: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
-              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
+            <div style={{ position: 'relative' }} className="tooltip-wrapper">
+              <button onClick={toggleTheme}
+                style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '8px', cursor: 'pointer', color: 'var(--text-secondary)', padding: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>
+                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+              <span className="tooltip">{theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</span>
+            </div>
 
             {/* Notifications */}
-            <button style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '0.5rem' }}>
-              <Bell size={20} />
-            </button>
+            <div style={{ position: 'relative' }} className="tooltip-wrapper">
+              <button style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Bell size={20} />
+              </button>
+              <span className="tooltip">Notifications</span>
+            </div>
 
             {/* User menu */}
             <div style={{ position: 'relative' }}>
