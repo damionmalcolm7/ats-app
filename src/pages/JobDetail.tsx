@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { notifyHRTeam } from '../lib/notifications'
 import toast from 'react-hot-toast'
 import { ArrowLeft, MapPin, Briefcase, Clock, DollarSign, Upload, X, Plus, CheckCircle, Loader } from 'lucide-react'
 
@@ -251,6 +252,14 @@ export default function JobDetail() {
           redirectTo: `${window.location.origin}/reset-password`
         })
       } catch (e) {}
+
+      // Notify HR team of new application
+      await notifyHRTeam({
+        type: 'new_application',
+        title: 'New Application Received',
+        message: `${form.full_name} has applied for ${job?.title}`,
+        link: `/dashboard/applicants/${appData.id}`
+      })
     },
     onSuccess: () => { setSubmitted(true); toast.success('Application submitted!') },
     onError: (err: any) => toast.error(err.message || 'Submission failed'),
