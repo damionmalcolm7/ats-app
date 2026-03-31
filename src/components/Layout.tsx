@@ -7,8 +7,9 @@ import { useTheme } from '../contexts/ThemeContext'
 import {
   LayoutDashboard, Briefcase, Users, GitBranch,
   Calendar, Mail, BarChart2, Globe, Settings,
-  Bell, ChevronDown, LogOut, User, Menu, X, Sun, Moon
+  ChevronDown, LogOut, User, Menu, X, Sun, Moon
 } from 'lucide-react'
+import NotificationsPanel from './NotificationsPanel'
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -117,13 +118,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               <span className="tooltip">{theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</span>
             </div>
 
-            {/* Notifications */}
-            <div style={{ position: 'relative' }} className="tooltip-wrapper">
-              <button style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Bell size={20} />
-              </button>
-              <span className="tooltip">Notifications</span>
-            </div>
+            <NotificationsPanel />
 
             {/* User menu */}
             <div style={{ position: 'relative' }}>
