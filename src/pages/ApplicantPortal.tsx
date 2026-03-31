@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { notifyHRTeam } from '../lib/notifications'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { Briefcase, LogOut, FileText } from 'lucide-react'
@@ -235,6 +236,13 @@ function DocumentUploader({ doc, applicationId, onUploaded }: { doc: any, applic
       await supabase.from('documents').update({ file_url: publicUrl, status: 'uploaded', uploaded_at: new Date().toISOString() }).eq('id', doc.id)
       setUploaded(true)
       if (onUploaded) onUploaded()
+      // Notify HR team
+      await notifyHRTeam({
+        type: 'document_uploaded',
+        title: 'Document Uploaded',
+        message: `An applicant has uploaded: ${doc.name}`,
+        link: `/dashboard/applicants/${applicationId}`
+      })
     } catch (err: any) {
       alert(err.message)
     } finally {
