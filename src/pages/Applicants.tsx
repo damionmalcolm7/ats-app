@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { sendStatusEmail } from '../lib/email'
 import toast from 'react-hot-toast'
-import { Search, Eye, Zap, ThumbsUp, ThumbsDown, Filter, Mail, ChevronDown, Trash2 } from 'lucide-react'
+import { Search, Eye, Zap, ThumbsUp, ThumbsDown, Filter, Mail, ChevronDown, Trash2, SlidersHorizontal, X as XIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 const statusColors: Record<string, string> = {
@@ -21,6 +21,13 @@ export default function Applicants() {
   const [jobFilter, setJobFilter] = useState('all')
   const [minScore, setMinScore] = useState(0)
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false)
+  const [showMoreFilters, setShowMoreFilters] = useState(false)
+  const [locationFilter, setLocationFilter] = useState('all')
+  const [sourceFilter, setSourceFilter] = useState('all')
+  const [dateFilter, setDateFilter] = useState('all')
+  const [experienceFilter, setExperienceFilter] = useState('all')
+  const [minScoreFilter, setMinScoreFilter] = useState(0)
+  const [maxScoreFilter, setMaxScoreFilter] = useState(100)
   const [showScreening, setShowScreening] = useState(false)
   const [shortlistThreshold, setShortlistThreshold] = useState(70)
   const [rejectThreshold, setRejectThreshold] = useState(40)
@@ -46,7 +53,7 @@ export default function Applicants() {
       const enriched = await Promise.all((data || []).map(async (app) => {
         const { data: details } = await supabase
           .from('applicant_details')
-          .select('*')
+          .select('*, location:profiles!applicant_details_application_id_fkey(location)')
           .eq('application_id', app.id)
           .single()
         return { ...app, applicant_details: details }
@@ -231,8 +238,37 @@ export default function Applicants() {
     const matchJob = jobFilter === 'all' || a.job_id === jobFilter
     const matchScore = minScore === 0 || (a.match_score != null && a.match_score >= minScore)
     const matchDuplicate = !showDuplicatesOnly || a.is_duplicate
-    return matchSearch && matchStatus && matchJob && matchScore && matchDuplicate
+    const matchLocation = locationFilter === 'all' || a.applicant_details?.location === locationFilter
+    const matchSource = sourceFilter === 'all' || a.source === sourceFilter
+    const matchExperience = experienceFilter === 'all' || (() => {
+      const yrs = a.applicant_details?.years_experience || 0
+      if (experienceFilter === 'up1') return yrs <= 1
+      if (experienceFilter === '1+') return yrs >= 1
+      if (experienceFilter === '3+') return yrs >= 3
+      if (experienceFilter === '5+') return yrs >= 5
+      if (experienceFilter === '7+') return yrs >= 7
+      return true
+    })()
+    const matchDate = dateFilter === 'all' || (() => {
+      const appDate = new Date(a.created_at)
+      const now = new Date()
+      const diff = (now.getTime() - appDate.getTime()) / (1000 * 60 * 60 * 24)
+      if (dateFilter === '30') return diff <= 30
+      if (dateFilter === '90') return diff <= 90
+      if (dateFilter === '365') return diff <= 365
+      return true
+    })()
+    const matchScoreRange = (a.match_score == null) || (a.match_score >= minScoreFilter && a.match_score <= maxScoreFilter)
+    return matchSearch && matchStatus && matchJob && matchScore && matchDuplicate && matchLocation && matchSource && matchExperience && matchDate && matchScoreRange
   })
+
+  const activeAdvancedFilters = [
+    locationFilter !== 'all',
+    sourceFilter !== 'all',
+    dateFilter !== 'all',
+    experienceFilter !== 'all',
+    minScoreFilter > 0 || maxScoreFilter < 100
+  ].filter(Boolean).length
 
   const allSelected = filtered.length > 0 && filtered.every(a => selectedIds.includes(a.id))
 
@@ -244,6 +280,9 @@ export default function Applicants() {
   function toggleSelect(id: string) {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
   }
+
+  const uniqueSources = [...new Set(applications.map(a => a.source).filter(Boolean))] as string[]
+  const uniqueLocations = [...new Set(applications.map(a => a.applicant_details?.location).filter(Boolean))] as string[]
 
   const appliedApps = applications.filter(a => a.status === 'applied' && a.match_score != null)
   const highMatch = appliedApps.filter(a => a.match_score >= shortlistThreshold).length
@@ -384,7 +423,117 @@ export default function Applicants() {
           style={{ background: showDuplicatesOnly ? 'rgba(245,158,11,0.15)' : 'var(--navy-800)', border: `1px solid ${showDuplicatesOnly ? 'rgba(245,158,11,0.4)' : 'var(--border)'}`, color: showDuplicatesOnly ? '#f59e0b' : 'var(--text-muted)', borderRadius: '8px', padding: '0.375rem 0.875rem', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: showDuplicatesOnly ? '600' : '400', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
           ⚠ {showDuplicatesOnly ? 'Showing Duplicates' : 'Show Duplicates'} ({applications.filter(a => a.is_duplicate).length})
         </button>
+        <button
+          onClick={() => setShowMoreFilters(!showMoreFilters)}
+          style={{ background: activeAdvancedFilters > 0 ? 'rgba(37,99,235,0.15)' : 'var(--navy-800)', border: `1px solid ${activeAdvancedFilters > 0 ? 'rgba(37,99,235,0.4)' : 'var(--border)'}`, color: activeAdvancedFilters > 0 ? 'var(--blue-400)' : 'var(--text-muted)', borderRadius: '8px', padding: '0.375rem 0.875rem', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: activeAdvancedFilters > 0 ? '600' : '400', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+          <SlidersHorizontal size={14} /> More Filters {activeAdvancedFilters > 0 && `(${activeAdvancedFilters})`}
+        </button>
       </div>
+
+      {/* More Filters Panel */}
+      {showMoreFilters && (
+        <div className="card" style={{ marginBottom: '1.25rem', padding: '1.25rem', border: '1px solid rgba(37,99,235,0.25)', background: 'rgba(37,99,235,0.03)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <SlidersHorizontal size={16} color="var(--blue-400)" />
+              <h3 style={{ fontWeight: '600', fontSize: '0.9375rem' }}>Advanced Filters</h3>
+              {activeAdvancedFilters > 0 && <span style={{ background: 'var(--blue-500)', color: 'white', borderRadius: '9999px', fontSize: '0.7rem', padding: '0.1rem 0.5rem', fontWeight: '700' }}>{activeAdvancedFilters} active</span>}
+            </div>
+            {activeAdvancedFilters > 0 && (
+              <button onClick={() => { setLocationFilter('all'); setSourceFilter('all'); setDateFilter('all'); setExperienceFilter('all'); setMinScoreFilter(0); setMaxScoreFilter(100) }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--blue-400)', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <XIcon size={13} /> Clear all filters
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+
+            {/* Location */}
+            <div>
+              <label className="label">Candidate Location</label>
+              <select className="input" value={locationFilter} onChange={e => setLocationFilter(e.target.value)}>
+                <option value="all">All Locations</option>
+                {['Clarendon','Hanover','Kingston','Manchester','Portland','St. Andrew','St. Ann','St. Catherine','St. Elizabeth','St. James','St. Mary','St. Thomas','Trelawny','Westmoreland'].map(p => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Source */}
+            <div>
+              <label className="label">Source</label>
+              <select className="input" value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}>
+                <option value="all">All Sources</option>
+                {uniqueSources.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+
+            {/* Application Date */}
+            <div>
+              <label className="label">Application Date</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+                {[
+                  { value: 'all', label: 'Any time' },
+                  { value: '30', label: 'Last 30 days' },
+                  { value: '90', label: 'Last 3 months' },
+                  { value: '365', label: 'Last year' },
+                ].map(opt => (
+                  <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                    <input type="radio" name="dateFilter" value={opt.value} checked={dateFilter === opt.value} onChange={() => setDateFilter(opt.value)} style={{ accentColor: 'var(--blue-500)' }} />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Years of Experience */}
+            <div>
+              <label className="label">Years of Experience</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
+                {[
+                  { value: 'all', label: 'Any' },
+                  { value: 'up1', label: 'Up to 1' },
+                  { value: '1+', label: '1+' },
+                  { value: '3+', label: '3+' },
+                  { value: '5+', label: '5+' },
+                  { value: '7+', label: '7+' },
+                ].map(opt => (
+                  <button key={opt.value} type="button" onClick={() => setExperienceFilter(opt.value)}
+                    style={{ padding: '0.25rem 0.75rem', borderRadius: '6px', border: '1px solid', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: '500', transition: 'all 0.15s', background: experienceFilter === opt.value ? 'rgba(37,99,235,0.2)' : 'transparent', borderColor: experienceFilter === opt.value ? 'var(--blue-500)' : 'var(--border)', color: experienceFilter === opt.value ? 'var(--blue-400)' : 'var(--text-muted)' }}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Match Score Range */}
+            <div style={{ gridColumn: 'span 2' }}>
+              <label className="label">Match Score Range: <strong style={{ color: 'var(--blue-400)' }}>{minScoreFilter}% — {maxScoreFilter}%</strong></label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Min</span>
+                <input type="range" min="0" max="100" step="5" value={minScoreFilter} onChange={e => setMinScoreFilter(Number(e.target.value))} style={{ flex: 1, accentColor: 'var(--blue-500)' }} />
+                <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Max</span>
+                <input type="range" min="0" max="100" step="5" value={maxScoreFilter} onChange={e => setMaxScoreFilter(Number(e.target.value))} style={{ flex: 1, accentColor: 'var(--blue-500)' }} />
+              </div>
+            </div>
+
+          </div>
+
+          {/* Results count */}
+          <div style={{ marginTop: '1rem', paddingTop: '0.875rem', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+              <strong style={{ color: 'var(--text-primary)' }}>{filtered.length}</strong> candidate{filtered.length !== 1 ? 's' : ''} match your filters
+            </span>
+            {filtered.length > 0 && (
+              <button onClick={() => { setSelectedIds(filtered.map(a => a.id)); setShowMoreFilters(false) }}
+                className="btn-primary" style={{ fontSize: '0.8125rem', padding: '0.375rem 0.875rem' }}>
+                Select All {filtered.length} Candidates
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Duplicate warning banner */}
       {applications.filter(a => a.is_duplicate).length > 0 && !showDuplicatesOnly && (
