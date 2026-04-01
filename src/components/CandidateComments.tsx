@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { Send, Reply, Edit, Trash2, AtSign } from 'lucide-react'
+import { createNotification } from '../lib/notifications'
 
 interface Props {
   applicationId: string
@@ -61,6 +62,26 @@ export default function CandidateComments({ applicationId }: Props) {
         parent_id: parentId || null
       })
       if (error) throw error
+
+      // Detect @mentions and send notifications
+      const mentionRegex = /@([\w\s]+?)(?=\s@|\s*$|\s[^@])/g
+      const mentions = [...content.matchAll(mentionRegex)].map(m => m[1].trim())
+      if (mentions.length > 0) {
+        for (const mentionName of mentions) {
+          const mentionedUser = hrUsers.find((u: any) =>
+            u.full_name.toLowerCase() === mentionName.toLowerCase()
+          )
+          if (mentionedUser && mentionedUser.user_id !== profile?.user_id) {
+            await createNotification({
+              user_id: mentionedUser.user_id,
+              type: 'review_submitted',
+              title: `${profile?.full_name} mentioned you`,
+              message: `"${content.trim().substring(0, 80)}${content.length > 80 ? '...' : ''}"`,
+              link: `/dashboard/applicants/${applicationId}`
+            })
+          }
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', applicationId] })
