@@ -211,3 +211,13 @@ textarea.input { resize: vertical; min-height: 100px; }
 [data-theme="light"] .tooltip::after {
   border-bottom-color: #334155;
 }
+
+/* ── Light mode header icons ── */
+[data-theme="light"] header button {
+  color: #1e293b;
+}
+
+[data-theme="light"] header button:hover {
+  color: #0f172a;
+  background: #e2e8f0;
+}
