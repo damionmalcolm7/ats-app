@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
-import { Send, Reply, Edit, Trash2, AtSign } from 'lucide-react'
+import { Send, Reply, Edit, Trash2, AtSign, CheckCircle2, RotateCcw } from 'lucide-react'
 import { createNotification } from '../lib/notifications'
 
 interface Props {
@@ -58,10 +58,44 @@ export default function CandidateComments({ applicationId }: Props) {
     }
   })
 
-  // Top-level comments
-  const topLevelComments = comments.filter((c: any) => !c.parent_id)
+  // Check if discussion is resolved (stored on a special record with type 'resolved')
+  const resolveRecord = (comments as any[]).find((c: any) => c.content === '__resolved__')
+  const isResolved = !!resolveRecord
+
+  const resolveDiscussion = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('candidate_comments').insert({
+        application_id: applicationId,
+        author_id: profile?.user_id,
+        content: '__resolved__',
+        parent_id: null
+      })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments', applicationId] })
+      toast.success('Discussion resolved!')
+    }
+  })
+
+  const reopenDiscussion = useMutation({
+    mutationFn: async () => {
+      if (!resolveRecord) return
+      await supabase.from('candidate_comments').delete().eq('id', resolveRecord.id)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments', applicationId] })
+      toast.success('Discussion reopened')
+    }
+  })
+
+  // Top-level comments - exclude the resolve record
+  const topLevelComments = comments.filter((c: any) => !c.parent_id && c.content !== '__resolved__')
   // Replies grouped by parent
-  const getReplies = (parentId: string) => comments.filter((c: any) => c.parent_id === parentId)
+  const [showAllComments, setShowAllComments] = useState(false)
+  const visibleComments = showAllComments ? topLevelComments : topLevelComments.slice(-3)
+  const hiddenCount = topLevelComments.length - 3
+  const getReplies = (parentId: string) => comments.filter((c: any) => c.parent_id === parentId && c.content !== '__resolved__')
 
   const addComment = useMutation({
     mutationFn: async ({ content, parentId }: { content: string, parentId?: string }) => {
@@ -335,13 +369,46 @@ export default function CandidateComments({ applicationId }: Props) {
         </div>
       ) : (
         <div style={{ marginBottom: '1.25rem' }}>
-          {topLevelComments.map((comment: any) => (
+          {/* Resolved banner */}
+          {isResolved && (
+            <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#10b981' }}>
+                <CheckCircle2 size={16} />
+                <span>Discussion resolved by <strong>{resolveRecord?.author?.full_name || 'HR Team'}</strong> · {formatTime(resolveRecord?.created_at)}</span>
+              </div>
+              <button onClick={() => reopenDiscussion.mutate()}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <RotateCcw size={12} /> Reopen
+              </button>
+            </div>
+          )}
+
+          {/* Show earlier comments */}
+          {!showAllComments && hiddenCount > 0 && (
+            <button onClick={() => setShowAllComments(true)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--blue-400)', fontSize: '0.8125rem', padding: '0.375rem 0', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem', width: '100%' }}>
+              ↑ Show {hiddenCount} earlier comment{hiddenCount !== 1 ? 's' : ''}
+            </button>
+          )}
+          {showAllComments && hiddenCount > 0 && (
+            <button onClick={() => setShowAllComments(false)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.8125rem', padding: '0.375rem 0', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem', width: '100%' }}>
+              ↓ Show less
+            </button>
+          )}
+
+          {visibleComments.map((comment: any) => (
             <CommentCard key={comment.id} comment={comment} />
           ))}
         </div>
       )}
 
       {/* New comment input */}
+      {isResolved ? (
+        <div style={{ textAlign: 'center', padding: '1rem', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '8px', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+          This discussion is resolved. <button onClick={() => reopenDiscussion.mutate()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--blue-400)', fontSize: '0.875rem' }}>Reopen</button> to add more comments.
+        </div>
+      ) : (
       <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'flex-start' }}>
         <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--blue-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8125rem', fontWeight: '700', color: 'white', flexShrink: 0, marginTop: '0.25rem' }}>
           {profile?.full_name?.[0]?.toUpperCase()}
@@ -395,5 +462,6 @@ export default function CandidateComments({ applicationId }: Props) {
         </div>
       </div>
     </div>
+      )}
   )
 }
