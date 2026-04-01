@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useTheme } from '../contexts/ThemeContext'
 import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Eye, EyeOff, Briefcase, ArrowLeft } from 'lucide-react'
@@ -8,6 +9,9 @@ import { Eye, EyeOff, Briefcase, ArrowLeft } from 'lucide-react'
 export default function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
+
+  const { theme } = useTheme()
+  const LIGHT_LOGO = 'https://ljgjgaojkihpaykfewpa.supabase.co/storage/v1/object/public/avatars/Logo%20Text%20and%20Slogan%20to%20left.png'
 
   const { data: settings } = useQuery({
     queryKey: ['settings'],
@@ -65,7 +69,7 @@ export default function Login() {
   const logoSection = (
     <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
       {settings?.company_logo ? (
-        <img src={settings.company_logo} alt={settings.company_name || 'Company'} style={{ maxHeight: '70px', maxWidth: '220px', objectFit: 'contain', margin: '0 auto 1rem', display: 'block' }} />
+        <img src={theme === 'light' ? LIGHT_LOGO : settings.company_logo} alt={settings.company_name || 'Company'} style={{ maxHeight: '70px', maxWidth: '220px', objectFit: 'contain', margin: '0 auto 1rem', display: 'block' }} />
       ) : (
         <div style={{ width: '56px', height: '56px', background: 'var(--blue-500)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
           <Briefcase size={28} color="white" />
