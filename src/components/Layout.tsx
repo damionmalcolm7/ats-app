@@ -61,7 +61,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.75rem', minHeight: '64px' }}>
           {settings?.company_logo ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <img src={settings.company_logo} alt="Company Logo" style={{ maxHeight: '36px', maxWidth: '160px', objectFit: 'contain' }} />
+              <img src={theme === 'light' ? LIGHT_LOGO : settings.company_logo} alt="Company Logo" style={{ maxHeight: '36px', maxWidth: '160px', objectFit: 'contain' }} />
               <div style={{ fontSize: '0.65rem', color: 'var(--blue-400)', fontWeight: '600', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Recruitment Hub</div>
             </div>
           ) : (
