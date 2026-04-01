@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
 import { useNavigate } from 'react-router-dom'
 import { Bell, X, Check, Trash2, CheckCheck } from 'lucide-react'
 
@@ -25,6 +26,7 @@ const TYPE_COLORS: Record<string, string> = {
 
 export default function NotificationsPanel() {
   const { profile } = useAuth()
+  const { theme } = useTheme()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
@@ -110,7 +112,7 @@ export default function NotificationsPanel() {
       {/* Bell button */}
       <button
         onClick={() => setOpen(!open)}
-        style={{ position: 'relative', background: open ? 'var(--navy-700)' : 'none', border: 'none', cursor: 'pointer', color: open ? 'var(--blue-400)' : 'var(--text-secondary)', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', transition: 'all 0.2s' }}>
+        style={{ position: 'relative', background: open ? 'var(--navy-700)' : 'none', border: 'none', cursor: 'pointer', color: open ? 'var(--blue-400)' : theme === 'light' ? '#1e293b' : 'var(--text-secondary)', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', transition: 'all 0.2s' }}>
         <Bell size={20} />
         {unreadCount > 0 && (
           <span style={{ position: 'absolute', top: '2px', right: '2px', background: '#ef4444', color: 'white', borderRadius: '9999px', fontSize: '0.625rem', fontWeight: '700', minWidth: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', lineHeight: 1 }}>
