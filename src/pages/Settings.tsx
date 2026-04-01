@@ -320,7 +320,7 @@ export default function Settings() {
                     <div>
                       <div style={{ fontWeight: '500', fontSize: '0.875rem' }}>{invite.email}</div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
-                        {invite.role.replace('_', ' ')} · Expires {new Date(invite.expires_at).toLocaleDateString()}
+                        {invite.role?.replace('_', ' ') || 'hr'} · Expires {new Date(invite.expires_at).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
@@ -379,7 +379,7 @@ export default function Settings() {
                     </>
                   ) : (
                     <span className={`badge ${user.role === 'super_admin' ? 'badge-purple' : 'badge-blue'}`} style={{ textTransform: 'capitalize', fontSize: '0.75rem' }}>
-                      {user.role.replace('_', ' ')}
+                      {user.role?.replace('_', ' ') || 'hr'}
                     </span>
                   )}
                 </div>
