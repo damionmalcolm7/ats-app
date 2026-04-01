@@ -25,6 +25,8 @@ const navItems = [
 export default function Layout({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth()
   const { theme, toggleTheme } = useTheme()
+  const DARK_LOGO = 'https://ljgjgaojkihpaykfewpa.supabase.co/storage/v1/object/public/avatars/nht-logo-white.png'
+  const LIGHT_LOGO = 'https://ljgjgaojkihpaykfewpa.supabase.co/storage/v1/object/public/avatars/Logo%20Text%20and%20Slogan%20to%20left.png'
 
   const { data: settings } = useQuery({
     queryKey: ['settings'],
