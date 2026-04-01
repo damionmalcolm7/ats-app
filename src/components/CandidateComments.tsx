@@ -26,7 +26,7 @@ export default function CandidateComments({ applicationId }: Props) {
     queryFn: async () => {
       const { data } = await supabase
         .from('candidate_comments')
-        .select('*, author:profiles!candidate_comments_author_id_fkey(full_name, job_title, role)')
+        .select('*, author:profiles(full_name, job_title, role)')
         .eq('application_id', applicationId)
         .order('created_at', { ascending: true })
       return data || []
