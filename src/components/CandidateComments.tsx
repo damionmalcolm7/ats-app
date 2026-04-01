@@ -360,6 +360,16 @@ export default function CandidateComments({ applicationId }: Props) {
 
   return (
     <div>
+      {/* Resolve button */}
+      {topLevelComments.length > 0 && !isResolved && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.875rem' }}>
+          <button onClick={() => { if (confirm('Mark this discussion as resolved?')) resolveDiscussion.mutate() }}
+            style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', borderRadius: '8px', padding: '0.375rem 0.875rem', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+            <CheckCircle2 size={14} /> Resolve discussion
+          </button>
+        </div>
+      )}
+
       {/* Comments list */}
       {isLoading ? (
         <div style={{ textAlign: 'center', padding: '1.5rem' }}><span className="spinner" /></div>
