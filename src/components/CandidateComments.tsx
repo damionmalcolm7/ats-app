@@ -461,7 +461,7 @@ export default function CandidateComments({ applicationId }: Props) {
           </div>
         </div>
       </div>
-    </div>
       )}
+    </div>
   )
 }
