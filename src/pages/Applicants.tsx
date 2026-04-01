@@ -53,7 +53,7 @@ export default function Applicants() {
       const enriched = await Promise.all((data || []).map(async (app) => {
         const { data: details } = await supabase
           .from('applicant_details')
-          .select('*, location:profiles!applicant_details_application_id_fkey(location)')
+          .select('*')
           .eq('application_id', app.id)
           .single()
         return { ...app, applicant_details: details }
