@@ -25,12 +25,23 @@ export default function CandidateComments({ applicationId }: Props) {
   const { data: comments = [], isLoading } = useQuery({
     queryKey: ['comments', applicationId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('candidate_comments')
-        .select('*, author:profiles(full_name, job_title, role)')
+        .select('*')
         .eq('application_id', applicationId)
         .order('created_at', { ascending: true })
-      return data || []
+      if (error) throw error
+
+      // Fetch author details separately
+      const enriched = await Promise.all((data || []).map(async (comment) => {
+        const { data: author } = await supabase
+          .from('profiles')
+          .select('full_name, job_title, role')
+          .eq('user_id', comment.author_id)
+          .single()
+        return { ...comment, author }
+      }))
+      return enriched
     },
     refetchInterval: 15000 // Auto refresh every 15 seconds
   })
@@ -64,13 +75,13 @@ export default function CandidateComments({ applicationId }: Props) {
       if (error) throw error
 
       // Detect @mentions and send notifications
-      const mentionRegex = /@([\w\s]+?)(?=\s@|\s*$|\s[^@])/g
-      const mentions = [...content.matchAll(mentionRegex)].map(m => m[1].trim())
-      if (mentions.length > 0) {
-        for (const mentionName of mentions) {
-          const mentionedUser = hrUsers.find((u: any) =>
-            u.full_name.toLowerCase() === mentionName.toLowerCase()
-          )
+      // Check each HR user if their name appears after @ in the comment
+      const mentionedUsers = hrUsers.filter((u: any) =>
+        content.includes('@' + u.full_name)
+      )
+      if (mentionedUsers.length > 0) {
+        for (const mentionedUser of mentionedUsers) {
+          if (true) {
           if (mentionedUser && mentionedUser.user_id !== profile?.user_id) {
             await createNotification({
               user_id: mentionedUser.user_id,
