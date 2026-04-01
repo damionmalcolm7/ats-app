@@ -13,11 +13,8 @@ export async function createNotification({
   message: string
   link?: string
 }) {
-  try {
-    await supabase.from('notifications').insert({ user_id, type, title, message, link })
-  } catch (err) {
-    console.error('Failed to create notification:', err)
-  }
+  const { error } = await supabase.from('notifications').insert({ user_id, type, title, message, link })
+  if (error) console.error('Failed to create notification:', error.message)
 }
 
 // Notify all HR/Admin users
@@ -32,24 +29,21 @@ export async function notifyHRTeam({
   message: string
   link?: string
 }) {
-  try {
-    const { data: hrUsers } = await supabase
-      .from('profiles')
-      .select('user_id')
-      .in('role', ['hr', 'super_admin'])
+  const { data: hrUsers } = await supabase
+    .from('profiles')
+    .select('user_id')
+    .in('role', ['hr', 'super_admin'])
 
-    if (!hrUsers?.length) return
+  if (!hrUsers?.length) return
 
-    const notifications = hrUsers.map(u => ({
-      user_id: u.user_id,
-      type,
-      title,
-      message,
-      link
-    }))
+  const notifications = hrUsers.map(u => ({
+    user_id: u.user_id,
+    type,
+    title,
+    message,
+    link
+  }))
 
-    await supabase.from('notifications').insert(notifications)
-  } catch (err) {
-    console.error('Failed to notify HR team:', err)
-  }
+  const { error } = await supabase.from('notifications').insert(notifications)
+  if (error) console.error('Failed to notify HR team:', error.message)
 }
