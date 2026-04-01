@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { ArrowLeft, Mail, Phone, FileText, Star, Tag, Plus, X, Download, Calendar, Upload } from 'lucide-react'
 import ScheduleInterview from '../components/ScheduleInterview'
 import CandidateReviews from '../components/CandidateReviews'
+import CandidateComments from '../components/CandidateComments'
 import InterviewFeedback from '../components/InterviewFeedback'
 import SendEmailModal from '../components/SendEmailModal'
 import RequestDocument from '../components/RequestDocument'
@@ -170,7 +171,7 @@ export default function ApplicantProfile() {
   if (!app) return <div style={{ padding: '2rem', color: 'var(--text-muted)' }}>Application not found</div>
 
   const details = app.applicant_details
-  const tabs = ['overview', 'resume', 'interviews', 'documents', 'notes', 'reviews']
+  const tabs = ['overview', 'resume', 'interviews', 'documents', 'notes', 'reviews', 'discussion']
 
   return (
     <div>
@@ -484,6 +485,17 @@ export default function ApplicantProfile() {
                 ))}
                 {notes.length === 0 && <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '1rem' }}>No notes yet</p>}
               </div>
+            </div>
+          )}
+
+          {/* Discussion tab */}
+          {activeTab === 'discussion' && (
+            <div className="card">
+              <div style={{ marginBottom: '1.25rem' }}>
+                <h3 style={{ fontWeight: '600' }}>Team Discussion</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginTop: '0.25rem' }}>Collaborate with your team about this candidate in real time</p>
+              </div>
+              <CandidateComments applicationId={id!} />
             </div>
           )}
 
