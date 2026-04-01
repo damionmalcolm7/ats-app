@@ -75,23 +75,17 @@ export default function CandidateComments({ applicationId }: Props) {
       if (error) throw error
 
       // Detect @mentions and send notifications
-      // Check each HR user if their name appears after @ in the comment
       const mentionedUsers = hrUsers.filter((u: any) =>
-        content.includes('@' + u.full_name)
+        content.includes('@' + u.full_name) && u.user_id !== profile?.user_id
       )
-      if (mentionedUsers.length > 0) {
-        for (const mentionedUser of mentionedUsers) {
-          if (true) {
-          if (mentionedUser && mentionedUser.user_id !== profile?.user_id) {
-            await createNotification({
-              user_id: mentionedUser.user_id,
-              type: 'review_submitted',
-              title: `${profile?.full_name} mentioned you`,
-              message: `"${content.trim().substring(0, 80)}${content.length > 80 ? '...' : ''}"`,
-              link: `/dashboard/applicants/${applicationId}`
-            })
-          }
-        }
+      for (const mentionedUser of mentionedUsers) {
+        await createNotification({
+          user_id: mentionedUser.user_id,
+          type: 'review_submitted',
+          title: `${profile?.full_name} mentioned you`,
+          message: `"${content.trim().substring(0, 80)}${content.length > 80 ? '...' : ''}"`,
+          link: `/dashboard/applicants/${applicationId}`
+        })
       }
     },
     onSuccess: () => {
