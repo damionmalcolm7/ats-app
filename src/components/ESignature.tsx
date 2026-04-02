@@ -94,9 +94,10 @@ export default function ESignature({ applicationId, applicantName, applicantEmai
         await supabase.from('documents').insert({
           application_id: applicationId,
           name: finalName,
-          type: 'offer',
+          type: 'offer_letter',
           status: 'uploaded',
           file_url: uploadedUrl,
+          required: false,
           uploaded_at: new Date().toISOString()
         })
       }
