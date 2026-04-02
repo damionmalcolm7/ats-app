@@ -470,8 +470,8 @@ export default function ApplicantProfile() {
             <div className="card" style={{ marginTop: '1.25rem' }}>
               <ESignature
                 applicationId={id!}
-                applicantName={application?.applicant_details?.full_name || ''}
-                applicantEmail={application?.applicant_details?.email || ''}
+                applicantName={app?.applicant_details?.full_name || ''}
+                applicantEmail={app?.applicant_details?.email || ''}
               />
             </div>
           )}
