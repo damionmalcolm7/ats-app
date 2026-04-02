@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { useTheme } from '../contexts/ThemeContext'
 import { useNavigate } from 'react-router-dom'
 import { Search, MapPin, Briefcase, Clock, DollarSign, Filter, LogOut, LayoutDashboard } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -24,6 +25,8 @@ const JOB_TYPES = [
 export default function JobBoard() {
   const navigate = useNavigate()
   const { user, profile } = useAuth()
+  const { theme } = useTheme()
+  const LIGHT_LOGO = 'https://ljgjgaojkihpaykfewpa.supabase.co/storage/v1/object/public/avatars/Logo%20Text%20and%20Slogan%20to%20left.png'
   const [search, setSearch] = useState('')
   const [locationFilter, setLocationFilter] = useState('all')
   const [employmentType, setEmploymentType] = useState('all')
@@ -65,7 +68,7 @@ export default function JobBoard() {
       <div style={{ background: 'var(--navy-900)', borderBottom: '1px solid var(--border)', padding: '0.875rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {settings?.company_logo ? (
-            <img src={settings.company_logo} alt={companyName} style={{ maxHeight: '36px', maxWidth: '140px', objectFit: 'contain' }} />
+            <img src={theme === 'light' ? LIGHT_LOGO : settings.company_logo} alt={companyName} style={{ maxHeight: '36px', maxWidth: '140px', objectFit: 'contain' }} />
           ) : (
             <>
               <div style={{ width: '32px', height: '32px', background: 'var(--blue-500)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
