@@ -97,7 +97,7 @@ export default function ESignature({ applicationId, applicantName, applicantEmai
           type: 'offer',
           status: 'uploaded',
           file_url: uploadedUrl,
-          uploaded_by: 'hr'
+          uploaded_at: new Date().toISOString()
         })
       }
 
