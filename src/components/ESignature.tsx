@@ -89,13 +89,25 @@ export default function ESignature({ applicationId, applicantName, applicantEmai
       })
       if (error) throw error
 
+      // Also add the document to the applicant's Documents tab so they can see it in their portal
+      if (uploadedUrl) {
+        await supabase.from('documents').insert({
+          application_id: applicationId,
+          name: finalName,
+          type: 'offer',
+          status: 'uploaded',
+          file_url: uploadedUrl,
+          uploaded_by: 'hr'
+        })
+      }
+
       // NOTE: When Adobe Sign is connected, this is where you would call:
       // const adobeResponse = await sendAdobeSignRequest({ documentUrl: uploadedUrl, recipientEmail: applicantEmail, recipientName: applicantName })
       // Then update the record with adobeResponse.agreementId
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['signature-requests', applicationId] })
-      toast.success(`Signature request sent to ${applicantName}!`)
+      toast.success(`Signature request sent! Document is now visible in ${applicantName}'s portal.`)
       setShowRequestForm(false)
       setDocumentName('')
       setCustomName('')
