@@ -71,7 +71,7 @@ export default function ESignature({ applicationId, applicantName, applicantEmai
   }
 
   const sendRequest = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (docUrl: string) => {
       const finalName = documentName === 'Other' ? customName : documentName
       if (!finalName) throw new Error('Please select a document type')
 
@@ -79,7 +79,7 @@ export default function ESignature({ applicationId, applicantName, applicantEmai
       const { error } = await supabase.from('signature_requests').insert({
         application_id: applicationId,
         document_name: finalName,
-        document_url: uploadedUrl || null,
+        document_url: docUrl || null,
         status: 'sent',
         requested_by: profile?.user_id,
         recipient_email: applicantEmail,
@@ -90,16 +90,17 @@ export default function ESignature({ applicationId, applicantName, applicantEmai
       if (error) throw error
 
       // Also add the document to the applicant's Documents tab so they can see it in their portal
-      if (uploadedUrl) {
-        await supabase.from('documents').insert({
+      if (docUrl) {
+        const { error: docError } = await supabase.from('documents').insert({
           application_id: applicationId,
           name: finalName,
           type: 'offer_letter',
           status: 'uploaded',
-          file_url: uploadedUrl,
+          file_url: docUrl,
           required: false,
           uploaded_at: new Date().toISOString()
         })
+        if (docError) console.error('Document insert error:', docError.message)
       }
 
       // NOTE: When Adobe Sign is connected, this is where you would call:
@@ -208,7 +209,7 @@ export default function ESignature({ applicationId, applicantName, applicantEmai
 
           <div style={{ display: 'flex', gap: '0.625rem' }}>
             <button className="btn-secondary" onClick={() => setShowRequestForm(false)}>Cancel</button>
-            <button className="btn-primary" onClick={() => sendRequest.mutate()} disabled={sendRequest.isPending || !documentName || (documentName === 'Other' && !customName)}>
+            <button className="btn-primary" onClick={() => sendRequest.mutate(uploadedUrl)} disabled={sendRequest.isPending || !documentName || (documentName === 'Other' && !customName)}>
               {sendRequest.isPending ? <span className="spinner" /> : <><Send size={14} /> Send Request</>}
             </button>
           </div>
