@@ -8,6 +8,7 @@ import { ArrowLeft, Mail, Phone, FileText, Star, Tag, Plus, X, Download, Calenda
 import ScheduleInterview from '../components/ScheduleInterview'
 import CandidateReviews from '../components/CandidateReviews'
 import CandidateComments from '../components/CandidateComments'
+import ESignature from '../components/ESignature'
 import InterviewFeedback from '../components/InterviewFeedback'
 import SendEmailModal from '../components/SendEmailModal'
 import RequestDocument from '../components/RequestDocument'
@@ -461,6 +462,17 @@ export default function ApplicantProfile() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* E-Signature section inside Documents tab */}
+          {activeTab === 'documents' && (
+            <div className="card" style={{ marginTop: '1.25rem' }}>
+              <ESignature
+                applicationId={id!}
+                applicantName={application?.applicant_details?.full_name || ''}
+                applicantEmail={application?.applicant_details?.email || ''}
+              />
             </div>
           )}
 
