@@ -58,8 +58,8 @@ export default function Pipeline() {
     mutationFn: async ({ id, status, email, name, jobTitle }: any) => {
       const { error } = await supabase.from('applications').update({ status, updated_at: new Date().toISOString() }).eq('id', id)
       if (error) throw error
-      if (email && name) {
-        await sendStatusEmail(status, email, name, jobTitle || '', id)
+      if (email && name && jobTitle) {
+        await sendStatusEmail(status, email, name, jobTitle, id)
       }
     },
     onSuccess: () => {
@@ -92,6 +92,31 @@ export default function Pipeline() {
     if (!draggedId) return
     const app = applications.find(a => a.id === draggedId)
     if (!app || app.status === stageId) return
+
+    const name = app.applicant_details?.full_name || 'This candidate'
+
+    // Confirm when moving INTO hired or rejected
+    if (stageId === 'hired') {
+      if (!confirm(`Mark ${name} as Hired? A congratulations email will be sent.`)) {
+        setDraggedId(null)
+        return
+      }
+    }
+    if (stageId === 'rejected') {
+      if (!confirm(`Reject ${name}? A rejection email will be sent.`)) {
+        setDraggedId(null)
+        return
+      }
+    }
+
+    // Confirm when moving OUT OF hired or rejected
+    if (app.status === 'hired' || app.status === 'rejected') {
+      if (!confirm(`Reopen ${name}'s application and move to ${stageId}?`)) {
+        setDraggedId(null)
+        return
+      }
+    }
+
     statusMutation.mutate({
       id: draggedId, status: stageId,
       email: app.applicant_details?.email,
@@ -110,6 +135,19 @@ export default function Pipeline() {
   function moveCandidate(appId: string, newStatus: string) {
     const app = applications.find(a => a.id === appId)
     if (!app) return
+
+    const name = app.applicant_details?.full_name || 'This candidate'
+
+    if (newStatus === 'hired') {
+      if (!confirm(`Mark ${name} as Hired? A congratulations email will be sent.`)) return
+    }
+    if (newStatus === 'rejected') {
+      if (!confirm(`Reject ${name}? A rejection email will be sent.`)) return
+    }
+    if (app.status === 'hired' || app.status === 'rejected') {
+      if (!confirm(`Reopen ${name}'s application and move to ${newStatus}?`)) return
+    }
+
     statusMutation.mutate({
       id: appId, status: newStatus,
       email: app.applicant_details?.email,
