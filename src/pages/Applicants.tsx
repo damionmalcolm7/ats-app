@@ -6,6 +6,7 @@ import { sendStatusEmail } from '../lib/email'
 import toast from 'react-hot-toast'
 import { Search, Eye, Zap, ThumbsUp, ThumbsDown, Filter, Mail, ChevronDown, Trash2, SlidersHorizontal, X as XIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 const statusColors: Record<string, string> = {
   applied: 'badge-blue', screening: 'badge-yellow', interview: 'badge-purple',
