@@ -185,7 +185,7 @@ export default function ESignature({ applicationId, applicantName, applicantEmai
           )}
 
           <div className="form-group">
-            <label className="label">Upload Document (optional)</label>
+            <label className="label">Upload Document *</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <label style={{ cursor: 'pointer' }} className="btn-secondary">
                 <Upload size={14} /> {uploading ? 'Uploading...' : 'Choose File'}
