@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { createAuditLog } from '../lib/audit'
 import { sendStatusEmail } from '../lib/email'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
@@ -62,9 +63,20 @@ export default function Pipeline() {
         await sendStatusEmail(status, email, name, jobTitle, id)
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, variables: any) => {
       queryClient.invalidateQueries({ queryKey: ['pipeline-applications'] })
       toast.success('Stage updated!')
+      if (profile) {
+        createAuditLog({
+          user_id: profile.user_id,
+          user_name: profile.full_name || 'Unknown',
+          user_role: profile.role || 'unknown',
+          action: 'UPDATE_APPLICATION_STATUS',
+          entity_type: 'application',
+          entity_id: variables.id,
+          details: { new_status: variables.status, candidate_name: variables.name, job_title: variables.jobTitle }
+        })
+      }
     },
     onError: (err: any) => toast.error(err.message)
   })
