@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { createAuditLog } from '../lib/audit'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { X, Plus } from 'lucide-react'
@@ -103,7 +104,21 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
         }
       }
     },
-    onSuccess: () => { toast.success(job ? 'Job updated!' : 'Job created!'); onSuccess() },
+    onSuccess: (_, variables: any) => {
+      toast.success(job ? 'Job updated!' : 'Job created!')
+      if (profile) {
+        createAuditLog({
+          user_id: profile.user_id,
+          user_name: profile.full_name || 'Unknown',
+          user_role: profile.role || 'unknown',
+          action: job ? 'UPDATE_JOB' : 'CREATE_JOB',
+          entity_type: 'job',
+          entity_id: job?.id,
+          details: { title: form.title, department: form.department, status: form.status }
+        })
+      }
+      onSuccess()
+    },
     onError: (err: any) => toast.error(err.message || 'Failed to save job')
   })
 
