@@ -23,9 +23,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const profileRef = useRef<Profile | null>(null)
-
-  useEffect(() => { profileRef.current = profile }, [profile])
 
   async function fetchProfile(userId: string) {
     try {
@@ -47,41 +44,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) await fetchProfile(user.id)
   }
 
-  async function signOut(reason?: string) {
-    if (profileRef.current) {
-      await createAuditLog({
-        user_id: profileRef.current.user_id,
-        user_name: profileRef.current.full_name || 'Unknown',
-        user_role: profileRef.current.role || 'unknown',
-        action: reason === 'timeout' ? 'SESSION_TIMEOUT' : 'SIGN_OUT',
-        details: reason === 'timeout' ? { reason: 'Automatically signed out due to inactivity' } : {}
-      })
-    }
-    clearTimeout(timeoutRef.current!)
+  async function signOut() {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
     await supabase.auth.signOut()
     setUser(null)
     setProfile(null)
-    if (reason === 'timeout') {
-      alert('You have been signed out due to 30 minutes of inactivity. Please sign in again.')
-    }
   }
 
-  function resetTimer() {
-    clearTimeout(timeoutRef.current!)
-    timeoutRef.current = setTimeout(() => signOut('timeout'), SESSION_TIMEOUT_MS)
-  }
-
+  // Session timeout — set up once when user logs in
   useEffect(() => {
-    if (!user) return
+    if (!user) {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      return
+    }
+
+    function startTimer() {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      timeoutRef.current = setTimeout(async () => {
+        await supabase.auth.signOut()
+        setUser(null)
+        setProfile(null)
+        alert('You have been signed out due to 30 minutes of inactivity. Please sign in again.')
+      }, SESSION_TIMEOUT_MS)
+    }
+
     const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click']
-    events.forEach(e => window.addEventListener(e, resetTimer))
-    resetTimer()
+    events.forEach(e => window.addEventListener(e, startTimer))
+    startTimer()
+
     return () => {
-      events.forEach(e => window.removeEventListener(e, resetTimer))
-      clearTimeout(timeoutRef.current!)
+      events.forEach(e => window.removeEventListener(e, startTimer))
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
     }
   }, [user])
 
+  // Auth state listener
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
@@ -99,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event === 'SIGNED_IN') {
           const { data: p } = await supabase.from('profiles').select('*').eq('user_id', session.user.id).single()
           if (p) {
-            await createAuditLog({
+            createAuditLog({
               user_id: p.user_id,
               user_name: p.full_name || 'Unknown',
               user_role: p.role || 'unknown',
