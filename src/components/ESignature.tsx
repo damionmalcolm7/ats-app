@@ -170,7 +170,7 @@ export default function ESignature({ applicationId, applicantName, applicantEmai
           <h4 style={{ fontWeight: '600', fontSize: '0.9375rem', marginBottom: '1rem' }}>New Signature Request</h4>
 
           <div className="form-group">
-            <label className="label">Document Type *</label>
+            <label className="label">Document Type <span style={{ color: '#ef4444' }}>*</span></label>
             <select className="input" value={documentName} onChange={e => setDocumentName(e.target.value)}>
               <option value="">— Select document —</option>
               {DOCUMENT_TEMPLATES.map(d => <option key={d} value={d}>{d}</option>)}
