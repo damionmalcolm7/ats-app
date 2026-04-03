@@ -21,7 +21,7 @@ export default function Jobs() {
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['jobs'],
     queryFn: async () => {
-      let query = supabase.from('jobs').select('*').order('created_at', { ascending: false })
+      let query = supabase.from('jobs').select('*').order('updated_at', { ascending: false })
       if (profile?.role !== 'super_admin') query = query.eq('created_by', profile?.user_id)
       const { data, error } = await query
       if (error) throw error
