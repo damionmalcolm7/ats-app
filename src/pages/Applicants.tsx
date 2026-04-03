@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { createAuditLog } from '../lib/audit'
 import { sendStatusEmail } from '../lib/email'
 import toast from 'react-hot-toast'
 import { Search, Eye, Zap, ThumbsUp, ThumbsDown, Filter, Mail, ChevronDown, Trash2, SlidersHorizontal, X as XIcon } from 'lucide-react'
@@ -16,6 +17,7 @@ const STATUSES = ['applied', 'screening', 'interview', 'assessment', 'offer', 'h
 export default function Applicants() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { profile } = useAuth()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [jobFilter, setJobFilter] = useState('all')
@@ -174,6 +176,15 @@ export default function Applicants() {
       }
       queryClient.invalidateQueries({ queryKey: ['applications'] })
       toast.success(`${selected.length} application${selected.length !== 1 ? 's' : ''} deleted`)
+      if (profile) {
+        createAuditLog({
+          user_id: profile.user_id,
+          user_name: profile.full_name || 'Unknown',
+          user_role: profile.role || 'unknown',
+          action: 'DELETE_APPLICATIONS',
+          details: { count: selected.length, application_ids: selected.map(a => a.id) }
+        })
+      }
       setSelectedIds([])
       setShowBulkActions(false)
     } catch (err: any) {
