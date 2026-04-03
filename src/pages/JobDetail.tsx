@@ -338,12 +338,11 @@ export default function JobDetail() {
               </div>
             )}
           </>
-          </>
           </div>
 
           {/* Sidebar - Other Jobs */}
           <div style={{ position: 'sticky', top: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div className="card" style={{ padding: '1.25rem' }}>
+            <div className='card' style={{ padding: '1.25rem' }}>
               <h3 style={{ fontWeight: '700', fontSize: '0.9375rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Other Opportunities</h3>
               {otherJobs.length === 0 ? (
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>No other positions available</p>
