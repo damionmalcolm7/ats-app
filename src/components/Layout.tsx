@@ -47,6 +47,8 @@ export default function Layout({ children }: { children: ReactNode }) {
   }
 
   return (
+    <>
+    <SessionTimeout />
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--navy-950)' }}>
       {/* Mobile overlay */}
       {sidebarOpen && (
