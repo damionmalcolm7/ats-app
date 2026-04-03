@@ -114,7 +114,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             {/* Theme toggle */}
             <div style={{ position: 'relative' }} className="tooltip-wrapper">
               <button onClick={toggleTheme}
-                style={{ background: theme === 'light' ? 'white' : 'none', border: 'none', borderRadius: '8px', cursor: 'pointer', color: theme === 'light' ? '#32438c' : 'var(--text-secondary)', padding: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>
+                style={{ background: 'none', border: theme === 'light' ? '1.5px solid #32438c' : 'none', borderRadius: '8px', cursor: 'pointer', color: theme === 'light' ? '#32438c' : 'var(--text-secondary)', padding: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>
                 {theme === 'dark' ? <Sun size={18} color='var(--text-secondary)' fill='none' /> : <Moon size={18} color='#32438c' fill='none' />}
               </button>
               <span className="tooltip">{theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</span>
