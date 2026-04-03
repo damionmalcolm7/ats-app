@@ -10,6 +10,7 @@ import {
   ChevronDown, LogOut, User, Menu, X, Sun, Moon
 } from 'lucide-react'
 import NotificationsPanel from './NotificationsPanel'
+import { createAuditLog } from '../lib/audit'
 import SessionTimeout from './SessionTimeout'
 
 const navItems = [
@@ -42,6 +43,14 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   async function handleSignOut() {
+    if (profile) {
+      await createAuditLog({
+        user_id: profile.user_id,
+        user_name: profile.full_name || 'Unknown',
+        user_role: profile.role || 'unknown',
+        action: 'SIGN_OUT'
+      })
+    }
     await signOut()
     navigate('/login')
   }
