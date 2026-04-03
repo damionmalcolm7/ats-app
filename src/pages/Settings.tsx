@@ -508,8 +508,17 @@ export default function Settings() {
                             {log.action}
                           </span>
                         </td>
-                        <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {log.details ? JSON.stringify(log.details) : '—'}
+                        <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', maxWidth: '250px' }}>
+                          {log.details ? (
+                            <span>
+                              {Object.entries(log.details).map(([k, v]: any) => (
+                                <span key={k} style={{ display: 'inline-block', marginRight: '0.5rem' }}>
+                                  <span style={{ color: 'var(--text-secondary)', fontWeight: '500', textTransform: 'capitalize' }}>{k.replace(/_/g, ' ')}:</span>{' '}
+                                  <span>{String(v)}</span>
+                                </span>
+                              ))}
+                            </span>
+                          ) : '—'}
                         </td>
                       </tr>
                     ))}
