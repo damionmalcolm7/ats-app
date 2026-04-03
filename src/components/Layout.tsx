@@ -10,6 +10,7 @@ import {
   ChevronDown, LogOut, User, Menu, X, Sun, Moon
 } from 'lucide-react'
 import NotificationsPanel from './NotificationsPanel'
+import SessionTimeout from './SessionTimeout'
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -163,5 +164,6 @@ export default function Layout({ children }: { children: ReactNode }) {
         </main>
       </div>
     </div>
+    </>
   )
 }
