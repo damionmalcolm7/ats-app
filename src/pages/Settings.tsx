@@ -527,6 +527,13 @@ export default function Settings() {
                     ))}
                   </tbody>
                 </table>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem' }}>
+  <button className="btn-secondary" onClick={() => setAuditPage(p => p - 1)} disabled={auditPage === 0}
+    style={{ fontSize: '0.8125rem' }}>← Previous</button>
+  <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Page {auditPage + 1}</span>
+  <button className="btn-secondary" onClick={() => setAuditPage(p => p + 1)} disabled={auditLogs.length < AUDIT_PAGE_SIZE}
+    style={{ fontSize: '0.8125rem' }}>Next →</button>
+</div>
               </div>
             )}
           </div>
