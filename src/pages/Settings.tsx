@@ -495,9 +495,9 @@ export default function Settings() {
                         </td>
                         <td style={{ fontWeight: '500', fontSize: '0.875rem' }}>{log.user_name}</td>
                         <td>
-                          <span className={`badge ${log.user_role === 'super_admin' ? 'badge-purple' : 'badge-blue'}`} style={{ textTransform: 'capitalize', fontSize: '0.75rem' }}>
-                            {log.user_role?.replace('_', ' ')}
-                          </span>
+                          <span className={`badge ${log.user_role === 'super_admin' ? 'badge-purple' : 'badge-blue'}`} style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+  {log.user_role === 'super_admin' ? 'Super Admin' : 'HR Staff'}
+</span>
                         </td>
                         <td>
                           <span style={{
