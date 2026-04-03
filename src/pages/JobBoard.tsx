@@ -36,7 +36,7 @@ export default function JobBoard() {
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['public-jobs'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('jobs').select('*').eq('status', 'active').order('created_at', { ascending: false })
+      const { data, error } = await supabase.from('jobs').select('*').eq('status', 'active').order('updated_at', { ascending: false })
       if (error) throw error
       return data as any[]
     }
