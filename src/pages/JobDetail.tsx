@@ -128,6 +128,20 @@ export default function JobDetail() {
     enabled: !!id
   })
 
+  const { data: otherJobs = [] } = useQuery({
+    queryKey: ['other-jobs', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('jobs')
+        .select('id, title, department, location, employment_type')
+        .eq('status', 'active')
+        .neq('id', id)
+        .limit(6)
+      return data || []
+    },
+    enabled: !!id
+  })
+
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [source, setSource] = useState('')
 
