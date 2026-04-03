@@ -112,8 +112,8 @@ export default function NotificationsPanel() {
       {/* Bell button */}
       <button
         onClick={() => setOpen(!open)}
-        style={{ position: 'relative', background: theme === 'light' ? 'white' : 'none', border: 'none', cursor: 'pointer', color: open ? 'var(--blue-400)' : theme === 'light' ? '#32438c' : 'var(--text-secondary)', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', transition: 'all 0.2s' }}>
-        <Bell size={18} color={theme === 'light' ? '#fbbf24' : 'var(--text-secondary)'} fill={theme === 'light' ? '#fbbf24' : 'none'} strokeWidth={theme === 'light' ? 0 : 2} />
+        style={{ position: 'relative', background: 'none', border: theme === 'light' ? '1.5px solid #32438c' : 'none', cursor: 'pointer', color: open ? 'var(--blue-400)' : theme === 'light' ? '#32438c' : 'var(--text-secondary)', padding: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', transition: 'all 0.2s' }}>
+        <Bell size={18} color={theme === 'light' ? '#32438c' : 'var(--text-secondary)'} fill='none' strokeWidth={2} />
         {unreadCount > 0 && (
           <span style={{ position: 'absolute', top: '2px', right: '2px', background: '#ef4444', color: 'white', borderRadius: '9999px', fontSize: '0.625rem', fontWeight: '700', minWidth: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', lineHeight: 1 }}>
             {unreadCount > 99 ? '99+' : unreadCount}
