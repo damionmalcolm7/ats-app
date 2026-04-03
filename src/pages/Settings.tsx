@@ -60,14 +60,17 @@ export default function Settings() {
     enabled: isSuperAdmin
   })
 
+  const [auditPage, setAuditPage] = useState(0)
+  const AUDIT_PAGE_SIZE = 20
+
   const { data: auditLogs = [] } = useQuery({
-    queryKey: ['audit-logs'],
+    queryKey: ['audit-logs', auditPage],
     queryFn: async () => {
       const { data } = await supabase
         .from('audit_logs')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(100)
+        .range(auditPage * AUDIT_PAGE_SIZE, (auditPage + 1) * AUDIT_PAGE_SIZE - 1)
       return data || []
     },
     enabled: isSuperAdmin
