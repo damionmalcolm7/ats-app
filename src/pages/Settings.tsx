@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { createAuditLog } from '../lib/audit'
 import { useAuth } from '../contexts/AuthContext'
 import { sendEmail } from '../lib/email'
 import toast from 'react-hot-toast'
@@ -50,6 +51,19 @@ export default function Settings() {
         .select('user_id, full_name, email, role, job_title, created_at')
         .in('role', ['hr', 'super_admin'])
         .order('full_name')
+      return data || []
+    },
+    enabled: isSuperAdmin
+  })
+
+  const { data: auditLogs = [] } = useQuery({
+    queryKey: ['audit-logs'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100)
       return data || []
     },
     enabled: isSuperAdmin
@@ -201,6 +215,7 @@ export default function Settings() {
     ...(isSuperAdmin ? [{ id: 'users', label: 'Team Members' }] : []),
     { id: 'profile', label: 'My Profile' },
     { id: 'embed', label: 'Embed Code' },
+    ...(isSuperAdmin ? [{ id: 'audit', label: 'Audit Logs' }] : []),
   ]
 
   return (
