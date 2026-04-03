@@ -27,10 +27,7 @@ export default function Settings() {
     queryKey: ['settings'],
     queryFn: async () => {
       const { data } = await supabase.from('app_settings').select('*').single()
-      return data
-    },
-    onSuccess: (data: any) => {
-      if (data && !settings) setSettings(data)
+      return data as any
     }
   })
 
@@ -91,7 +88,7 @@ export default function Settings() {
 
   const saveSettings = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('app_settings').upsert({ ...settings, id: savedSettings?.id || 1 })
+      const { error } = await supabase.from('app_settings').upsert({ ...settings, id: (savedSettings as any)?.id || 1 })
       if (error) throw error
     },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['settings'] }); toast.success('Settings saved!') },
