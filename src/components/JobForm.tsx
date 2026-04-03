@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -23,7 +23,6 @@ interface Job {
   status: 'draft' | 'active' | 'paused' | 'closed'
   created_by: string
   created_at: string
-  hiring_lead?: string
 }
 
 interface Props {
@@ -36,7 +35,7 @@ const emptyForm: any = {
   title: '', department: '', location: '', location_type: 'hybrid',
   employment_type: 'full-time', salary_min: '', salary_max: '',
   description: '', required_skills: [] as string[], experience_level: 'mid',
-  deadline: '', status: 'draft', hiring_lead: ''
+  deadline: '', status: 'draft'
 }
 
 export default function JobForm({ job, onClose, onSuccess }: Props) {
@@ -46,17 +45,6 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
   const [skillInput, setSkillInput] = useState('')
   const [activeTab, setActiveTab] = useState('details')
   const [questions, setQuestions] = useState<JobQuestion[]>([])
-  const { data: hrUsers = [] } = useQuery({
-  queryKey: ['hr-users'],
-  queryFn: async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('user_id, full_name, email, role')
-      .in('role', ['hr', 'super_admin'])
-      .order('full_name')
-    return data || []
-  }
-})
 
   useEffect(() => {
     if (job) {
@@ -66,7 +54,7 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
         salary_min: job.salary_min?.toString() || '', salary_max: job.salary_max?.toString() || '',
         description: job.description, required_skills: job.required_skills || [],
         experience_level: job.experience_level, deadline: job.deadline?.split('T')[0] || '',
-        status: job.status, hiring_lead: job.hiring_lead || ''
+        status: job.status
       })
       // Load existing questions
       supabase.from('job_questions').select('*').eq('job_id', job.id).order('order_index').then(({ data }) => {
@@ -83,7 +71,7 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
         salary_max: form.salary_max ? Number(form.salary_max) : null,
         deadline: form.deadline || null,
         created_by: profile?.user_id,
-hiring_lead: form.hiring_lead || null
+        updated_at: new Date().toISOString()
       }
 
       let jobId = job?.id
@@ -244,20 +232,6 @@ hiring_lead: form.hiring_lead || null
                     <option value="paused">Paused</option>
                     <option value="closed">Closed</option>
                   </select>
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="label">Hiring Lead</label>
-                <select className="input" value={form.hiring_lead} onChange={e => setForm({ ...form, hiring_lead: e.target.value })}>
-                  <option value="">— Select Hiring Lead —</option>
-                  {hrUsers.map((u: any) => (
-                    <option key={u.user_id} value={u.user_id}>
-                      {u.full_name} ({u.role.replace('_', ' ')})
-                    </option>
-                  ))}
-                </select>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                  The hiring lead will oversee candidate selection for this role
                 </div>
               </div>
 
