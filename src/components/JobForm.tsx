@@ -104,7 +104,7 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
         }
       }
     },
-    onSuccess: (_, variables: any) => {
+    onSuccess: () => {
       toast.success(job ? 'Job updated!' : 'Job created!')
       if (profile) {
         createAuditLog({
