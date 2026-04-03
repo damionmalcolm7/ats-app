@@ -338,7 +338,6 @@ export default function JobDetail() {
               <button className="btn-primary" onClick={() => setShowForm(true)} style={{ padding: '0.75rem 2rem', fontSize: '1rem' }}>Apply for This Position</button>
             </div>
             <div className="card" style={{ marginBottom: '1.25rem' }}>
-              <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem' }}>Job Description</h2>
               <div className="job-description" dangerouslySetInnerHTML={{ __html: job.description }} />
             </div>
             {job.required_skills?.length > 0 && (
