@@ -77,7 +77,7 @@ export default function ApplicantProfile() {
   const { data: notes = [] } = useQuery({
     queryKey: ['notes', id],
     queryFn: async () => {
-      const { data } = await supabase.from('application_notes').select('*, author:profiles(full_name)').eq('application_id', id).order('created_at', { ascending: false })
+      const { data } = await supabase.from('application_notes').select('*').eq('application_id', id).order('created_at', { ascending: false })
       return data || []
     }
   })
