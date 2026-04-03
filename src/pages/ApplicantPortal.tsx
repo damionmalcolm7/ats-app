@@ -179,17 +179,7 @@ export default function ApplicantPortal() {
 
                   {/* Email History */}
                   {app.emails?.length > 0 && (
-                    <div style={{ background: 'var(--navy-800)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.875rem' }}>
-                      <div style={{ fontSize: '0.8125rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.625rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                        <Mail size={13} /> Communication History
-                      </div>
-                      {app.emails.map((email: any) => (
-                        <div key={email.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.375rem 0', borderBottom: '1px solid rgba(30,48,96,0.3)' }}>
-                          <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>Email sent from HR Team</div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(email.sent_at).toLocaleDateString()}</div>
-                        </div>
-                      ))}
-                    </div>
+                    <EmailHistory emails={app.emails} />
                   )}
                 </div>
               ))}
@@ -198,7 +188,7 @@ export default function ApplicantPortal() {
         </div>
 
         {/* RIGHT — Sidebar */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'sticky', top: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'sticky', top: '1.5rem', marginTop: '3.5rem' }}>
 
           {/* Application Summary */}
           {selectedApp && (
@@ -277,6 +267,38 @@ export default function ApplicantPortal() {
 
         </div>
       </div>
+    </div>
+  )
+}
+
+function EmailHistory({ emails }: { emails: any[] }) {
+  const [showAll, setShowAll] = useState(false)
+  const visible = showAll ? emails : emails.slice(0, 5)
+  const hidden = emails.length - 5
+
+  return (
+    <div style={{ background: 'var(--navy-800)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.875rem' }}>
+      <div style={{ fontSize: '0.8125rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.625rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+        <Mail size={13} /> Communication History
+      </div>
+      {visible.map((email: any) => (
+        <div key={email.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.375rem 0', borderBottom: '1px solid rgba(30,48,96,0.3)' }}>
+          <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>Email sent from HR Team</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(email.sent_at).toLocaleDateString()}</div>
+        </div>
+      ))}
+      {!showAll && hidden > 0 && (
+        <button onClick={() => setShowAll(true)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--blue-400)', fontSize: '0.8125rem', marginTop: '0.5rem', padding: 0 }}>
+          + Show {hidden} more email{hidden !== 1 ? 's' : ''}
+        </button>
+      )}
+      {showAll && hidden > 0 && (
+        <button onClick={() => setShowAll(false)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.8125rem', marginTop: '0.5rem', padding: 0 }}>
+          Show less
+        </button>
+      )}
     </div>
   )
 }
