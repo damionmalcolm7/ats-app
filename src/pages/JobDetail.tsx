@@ -308,8 +308,10 @@ export default function JobDetail() {
         <span style={{ fontWeight: '700' }}>{settings?.company_name || 'Careers'}</span>
       </div>
 
-      <div style={{ maxWidth: '820px', margin: '0 auto', padding: 'clamp(1rem, 4vw, 2rem)' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: 'clamp(1rem, 4vw, 2rem)' }}>
         {!showForm ? (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '1.5rem', alignItems: 'start' }}>
+          <div>
           <>
             <div className="card" style={{ marginBottom: '1.25rem' }}>
               <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '1rem' }}>{job.title}</h1>
@@ -323,7 +325,7 @@ export default function JobDetail() {
             </div>
             <div className="card" style={{ marginBottom: '1.25rem' }}>
               <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem' }}>Job Description</h2>
-              <div style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: '0.9375rem' }} dangerouslySetInnerHTML={{ __html: job.description }} />
+              <div style={{ color: 'var(--text-secondary)', lineHeight: 1.8, whiteSpace: 'pre-wrap', fontSize: '0.9375rem' }}>{job.description}</div>
             </div>
             {job.required_skills?.length > 0 && (
               <div className="card">
@@ -336,6 +338,31 @@ export default function JobDetail() {
               </div>
             )}
           </>
+          </>
+          </div>
+
+          {/* Sidebar - Other Jobs */}
+          <div style={{ position: 'sticky', top: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="card" style={{ padding: '1.25rem' }}>
+              <h3 style={{ fontWeight: '700', fontSize: '0.9375rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Other Opportunities</h3>
+              {otherJobs.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>No other positions available</p>
+              ) : otherJobs.map((j: any) => (
+                <a key={j.id} href={`/jobs/${j.id}`}
+                  style={{ display: 'block', padding: '0.75rem', borderRadius: '8px', marginBottom: '0.5rem', background: 'var(--navy-700)', textDecoration: 'none', transition: 'background 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--navy-600)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'var(--navy-700)')}>
+                  <div style={{ fontWeight: '600', fontSize: '0.875rem', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>{j.title}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{j.department} · {j.location}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize', marginTop: '0.125rem' }}>{j.employment_type}</div>
+                </a>
+              ))}
+              <a href="/jobs" style={{ display: 'block', textAlign: 'center', marginTop: '0.5rem', fontSize: '0.8125rem', color: 'var(--blue-400)', textDecoration: 'none' }}>
+                View all positions →
+              </a>
+            </div>
+          </div>
+          </div>
         ) : (
           <div className="card">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
