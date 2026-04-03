@@ -5,6 +5,7 @@ import { createAuditLog } from '../lib/audit'
 import { sendStatusEmail } from '../lib/email'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import { Eye, ChevronDown, ChevronUp } from 'lucide-react'
 
 const STAGES = [
@@ -19,6 +20,7 @@ const STAGES = [
 
 export default function Pipeline() {
   const navigate = useNavigate()
+  const { profile } = useAuth()
   const queryClient = useQueryClient()
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dragOverStage, setDragOverStage] = useState<string | null>(null)
