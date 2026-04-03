@@ -193,7 +193,7 @@ export default function ESignature({ applicationId, applicantName, applicantEmai
               </label>
               {uploadedFileName && <span style={{ fontSize: '0.8125rem', color: '#10b981' }}>✓ {uploadedFileName}</span>}
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Supported: PDF, DOC, DOCX</div>
+            <div style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '0.25rem' }}>* Required — please upload the document before sending</div>
           </div>
 
           <div className="form-group">
@@ -209,7 +209,7 @@ export default function ESignature({ applicationId, applicantName, applicantEmai
 
           <div style={{ display: 'flex', gap: '0.625rem' }}>
             <button className="btn-secondary" onClick={() => setShowRequestForm(false)}>Cancel</button>
-            <button className="btn-primary" onClick={() => sendRequest.mutate(uploadedUrl)} disabled={sendRequest.isPending || !documentName || (documentName === 'Other' && !customName)}>
+            <button className="btn-primary" onClick={() => sendRequest.mutate(uploadedUrl)} disabled={sendRequest.isPending || !documentName || (documentName === 'Other' && !customName) || !uploadedUrl}>
               {sendRequest.isPending ? <span className="spinner" /> : <><Send size={14} /> Send Request</>}
             </button>
           </div>
