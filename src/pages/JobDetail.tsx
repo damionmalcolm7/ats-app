@@ -339,7 +339,7 @@ export default function JobDetail() {
             </div>
             <div className="card" style={{ marginBottom: '1.25rem' }}>
               <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem' }}>Job Description</h2>
-              <div style={{ color: 'var(--text-secondary)', lineHeight: 1.8, whiteSpace: 'pre-wrap', fontSize: '0.9375rem' }}>{job.description}</div>
+              <div className="job-description" dangerouslySetInnerHTML={{ __html: job.description }} />
             </div>
             {job.required_skills?.length > 0 && (
               <div className="card">
