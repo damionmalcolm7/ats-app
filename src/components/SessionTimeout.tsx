@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
-const TIMEOUT_MS = 30 * 60 * 1000 // 30 minutes
-const WARNING_MS = 25 * 60 * 1000 // Warning at 25 minutes
+const TIMEOUT_MS = 2 * 60 * 1000 // 30 minutes
+const WARNING_MS = 1 * 60 * 1000 // Warning at 25 minutes
 
 export default function SessionTimeout() {
   const { user, signOut } = useAuth()
