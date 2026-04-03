@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { createAuditLog } from '../lib/audit'
@@ -27,10 +27,17 @@ export default function Settings() {
     queryKey: ['settings'],
     queryFn: async () => {
       const { data } = await supabase.from('app_settings').select('*').single()
-      if (data) setSettings(data)
       return data
+    },
+    onSuccess: (data: any) => {
+      if (data && !settings) setSettings(data)
     }
   })
+
+  // Sync settings state when savedSettings loads
+  useEffect(() => {
+    if (savedSettings && !settings) setSettings(savedSettings)
+  }, [savedSettings])
 
   // Load full profile including job_title
   useQuery({
