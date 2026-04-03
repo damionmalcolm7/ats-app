@@ -464,6 +464,63 @@ export default function Settings() {
           </div>
         </div>
       )}
+
+      {/* Audit Logs Tab */}
+      {activeTab === 'audit' && isSuperAdmin && (
+        <div style={{ maxWidth: '900px' }}>
+          <div className="card">
+            <div style={{ marginBottom: '1.25rem' }}>
+              <h2 style={{ fontSize: '1.125rem', fontWeight: '600' }}>Audit Logs</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginTop: '0.25rem' }}>Track all user activity in the system</p>
+            </div>
+            {auditLogs.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>No audit logs yet</p>
+            ) : (
+              <div className="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date & Time</th>
+                      <th>User</th>
+                      <th>Role</th>
+                      <th>Action</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {auditLogs.map((log: any) => (
+                      <tr key={log.id}>
+                        <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                          {new Date(log.created_at).toLocaleString()}
+                        </td>
+                        <td style={{ fontWeight: '500', fontSize: '0.875rem' }}>{log.user_name}</td>
+                        <td>
+                          <span className={`badge ${log.user_role === 'super_admin' ? 'badge-purple' : 'badge-blue'}`} style={{ textTransform: 'capitalize', fontSize: '0.75rem' }}>
+                            {log.user_role?.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{
+                            background: log.action === 'SIGN_IN' ? 'rgba(16,185,129,0.1)' : log.action === 'SIGN_OUT' ? 'rgba(100,116,139,0.1)' : log.action === 'SESSION_TIMEOUT' ? 'rgba(245,158,11,0.1)' : log.action.includes('DELETE') ? 'rgba(239,68,68,0.1)' : 'rgba(37,99,235,0.1)',
+                            color: log.action === 'SIGN_IN' ? '#10b981' : log.action === 'SIGN_OUT' ? '#94a3b8' : log.action === 'SESSION_TIMEOUT' ? '#f59e0b' : log.action.includes('DELETE') ? '#ef4444' : '#3b82f6',
+                            borderRadius: '5px', padding: '0.15rem 0.5rem', fontSize: '0.75rem', fontWeight: '500', fontFamily: 'monospace'
+                          }}>
+                            {log.action}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {log.details ? JSON.stringify(log.details) : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     {/* Edit User Modal */}
       {editingUser && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setEditingUser(null)}>
