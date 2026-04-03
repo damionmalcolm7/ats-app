@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { createAuditLog } from '../lib/audit'
 import { useTheme } from '../contexts/ThemeContext'
 import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -37,9 +38,19 @@ export default function Login() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('*')
         .eq('user_id', data.user.id)
         .single()
+
+      if (profile) {
+        await createAuditLog({
+          user_id: profile.user_id,
+          user_name: profile.full_name || 'Unknown',
+          user_role: profile.role || 'unknown',
+          action: 'SIGN_IN',
+          details: { email: data.user.email }
+        })
+      }
 
       if (profile?.role === 'applicant') navigate('/portal')
       else navigate('/dashboard')
