@@ -35,7 +35,17 @@ export default function CandidateReviews({ applicationId }: Props) {
         .select('*')
         .eq('application_id', applicationId)
         .order('created_at', { ascending: false })
-      return data || []
+      
+      // Fetch reviewer names separately
+      const enriched = await Promise.all((data || []).map(async (review) => {
+        const { data: reviewer } = await supabase
+          .from('profiles')
+          .select('full_name, job_title, role')
+          .eq('user_id', review.reviewer_id)
+          .single()
+        return { ...review, reviewer }
+      }))
+      return enriched
     }
   })
 
@@ -110,7 +120,7 @@ export default function CandidateReviews({ applicationId }: Props) {
   return (
     <div>
       {/* Aggregate summary */}
-      {reviews.length > 0 && (
+      {reviews.length > 1 && (
         <div style={{ background: 'var(--navy-900)', border: '1px solid var(--border)', borderRadius: '10px', padding: '1rem', marginBottom: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
