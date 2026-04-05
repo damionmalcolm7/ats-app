@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { createAuditLog } from '../lib/audit'
 import toast from 'react-hot-toast'
 import { Edit, Trash2, CheckCircle, XCircle, HelpCircle, ThumbsUp, ThumbsDown } from 'lucide-react'
 
