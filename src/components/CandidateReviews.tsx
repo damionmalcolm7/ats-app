@@ -251,7 +251,7 @@ export default function CandidateReviews({ applicationId }: Props) {
                       </div>
                       <div>
                         <div style={{ fontWeight: '600', fontSize: '0.875rem' }}>{review.reviewer?.full_name || 'HR Team'}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{review.reviewer?.role?.replace('_', ' ')}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{review.reviewer?.job_title || review.reviewer?.role?.replace('_', ' ')}</div>
                       </div>
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(review.created_at).toLocaleDateString()}</div>
