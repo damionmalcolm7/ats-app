@@ -32,7 +32,7 @@ export default function CandidateReviews({ applicationId }: Props) {
     queryFn: async () => {
       const { data } = await supabase
         .from('candidate_reviews')
-        .select('*, reviewer:profiles!candidate_reviews_reviewer_id_fkey(full_name, role)')
+        .select('*')
         .eq('application_id', applicationId)
         .order('created_at', { ascending: false })
       return data || []
@@ -118,7 +118,7 @@ export default function CandidateReviews({ applicationId }: Props) {
                 <div style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>{avgRating}</div>
                 <div style={{ display: 'flex', gap: '0.125rem', marginTop: '0.25rem' }}>
                   {[1,2,3,4,5].map(n => (
-                    <span key={n} style={{ fontSize: '1rem', color: n <= Math.round(Number(avgRating)) ? '#f59e0b' : 'var(--navy-700)' }}>★</span>
+                    <span key={n} style={{ fontSize: '1rem', color: n <= Math.round(Number(avgRating)) ? '#f59e0b' : 'var(--text-muted)' }}>★</span>
                   ))}
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>{reviews.length} review{reviews.length !== 1 ? 's' : ''}</div>
@@ -152,7 +152,7 @@ export default function CandidateReviews({ applicationId }: Props) {
                   onMouseEnter={() => setHoverRating(n)}
                   onMouseLeave={() => setHoverRating(0)}
                   onClick={() => setRating(n)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.75rem', color: n <= (hoverRating || rating) ? '#f59e0b' : 'var(--navy-700)', transition: 'color 0.1s', lineHeight: 1 }}>
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.75rem', color: n <= (hoverRating || rating) ? '#f59e0b' : 'var(--text-muted)', transition: 'color 0.1s', lineHeight: 1 }}>
                   ★
                 </button>
               ))}
@@ -212,7 +212,7 @@ export default function CandidateReviews({ applicationId }: Props) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: myReview.comment ? '0.625rem' : 0 }}>
             <div style={{ display: 'flex', gap: '0.125rem' }}>
-              {[1,2,3,4,5].map(n => <span key={n} style={{ fontSize: '1rem', color: n <= myReview.rating ? '#f59e0b' : 'var(--navy-700)' }}>★</span>)}
+              {[1,2,3,4,5].map(n => <span key={n} style={{ fontSize: '1rem', color: n <= myReview.rating ? '#f59e0b' : 'var(--text-muted)' }}>★</span>)}
             </div>
             {myReview.recommendation && (() => {
               const rec = getRecLabel(myReview.recommendation)
@@ -248,7 +248,7 @@ export default function CandidateReviews({ applicationId }: Props) {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: review.comment ? '0.625rem' : 0 }}>
                     <div style={{ display: 'flex', gap: '0.125rem' }}>
-                      {[1,2,3,4,5].map(n => <span key={n} style={{ fontSize: '1rem', color: n <= review.rating ? '#f59e0b' : 'var(--navy-700)' }}>★</span>)}
+                      {[1,2,3,4,5].map(n => <span key={n} style={{ fontSize: '1rem', color: n <= review.rating ? '#f59e0b' : 'var(--text-muted)' }}>★</span>)}
                     </div>
                     {rec && <span style={{ background: `${rec.color}18`, border: `1px solid ${rec.color}40`, color: rec.color, borderRadius: '6px', padding: '0.2rem 0.625rem', fontSize: '0.8125rem', fontWeight: '500' }}>{rec.icon} {rec.label}</span>}
                   </div>
