@@ -8,6 +8,7 @@ import { ArrowLeft, Mail, Phone, FileText, Star, Tag, Plus, X, Download, Calenda
 import ScheduleInterview from '../components/ScheduleInterview'
 import CandidateReviews from '../components/CandidateReviews'
 import CandidateComments from '../components/CandidateComments'
+import { createAuditLog } from '../lib/audit'
 import ESignature from '../components/ESignature'
 import InterviewFeedback from '../components/InterviewFeedback'
 import SendEmailModal from '../components/SendEmailModal'
@@ -395,6 +396,17 @@ export default function ApplicantProfile() {
                                 await supabase.from('interviews').update({ status: 'cancelled' }).eq('id', iv.id)
                                 queryClient.invalidateQueries({ queryKey: ['interviews', id] })
                                 toast.success('Interview cancelled')
+                                if (profile) {
+                                  createAuditLog({
+                                    user_id: profile.user_id,
+                                    user_name: profile.full_name || 'Unknown',
+                                    user_role: profile.role || 'unknown',
+                                    action: 'CANCEL_INTERVIEW',
+                                    entity_type: 'interview',
+                                    entity_id: iv.id,
+                                    details: { format: iv.format, scheduled_at: iv.scheduled_at, application_id: id }
+                                  })
+                                }
                               }
                             }}
                             style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: '6px', padding: '0.25rem 0.625rem', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
