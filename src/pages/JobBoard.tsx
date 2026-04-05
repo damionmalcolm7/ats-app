@@ -91,8 +91,8 @@ export default function JobBoard() {
 
       {/* Hero */}
       <div style={{ background: 'linear-gradient(135deg, var(--navy-800) 0%, var(--navy-900) 100%)', padding: '2rem 1.25rem', textAlign: 'center', borderBottom: '1px solid var(--border)' }}>
-        <h1 style={{ fontSize: 'clamp(1.375rem, 5vw, 2rem)', fontWeight: '800', marginBottom: '0.5rem' }}>Join Our Team</h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', marginBottom: '1.25rem' }}>Explore open positions at {companyName}</p>
+        <h1 style={{ fontSize: 'clamp(1.375rem, 5vw, 2rem)', fontWeight: '700', marginBottom: '0.5rem' }}>Join Our Team</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', marginBottom: '1.25rem' }}>Explore open positions at the {companyName}</p>
         <div style={{ maxWidth: '540px', margin: '0 auto', position: 'relative' }}>
           <Search size={16} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input className="input" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search jobs..." style={{ paddingLeft: '2.5rem', height: '44px', fontSize: '0.9375rem' }} />
