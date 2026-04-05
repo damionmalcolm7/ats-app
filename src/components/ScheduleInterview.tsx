@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { sendEmail } from '../lib/email'
+import { createAuditLog } from '../lib/audit'
+import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { X } from 'lucide-react'
 
@@ -14,6 +16,7 @@ interface Props {
 }
 
 export default function ScheduleInterview({ applicationId, jobId, existingInterview, onClose, onSuccess }: Props) {
+  const { profile } = useAuth()
   const [form, setForm] = useState({
     scheduled_at: '', format: 'video' as const,
     location_or_link: '', notes: '', interviewers: ''
@@ -89,6 +92,17 @@ export default function ScheduleInterview({ applicationId, jobId, existingInterv
       }
 
       toast.success(existingInterview ? 'Interview rescheduled & email sent!' : 'Interview scheduled & email sent!')
+      if (profile) {
+        createAuditLog({
+          user_id: profile.user_id,
+          user_name: profile.full_name || 'Unknown',
+          user_role: profile.role || 'unknown',
+          action: existingInterview ? 'RESCHEDULE_INTERVIEW' : 'SCHEDULE_INTERVIEW',
+          entity_type: 'interview',
+          entity_id: applicationId,
+          details: { format: form.format, scheduled_at: form.scheduled_at, application_id: applicationId }
+        })
+      }
       onSuccess()
     },
     onError: (err: any) => toast.error(err.message)
