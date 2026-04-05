@@ -518,7 +518,7 @@ export default function Settings() {
                     <tr>
                       <th>Date & Time</th>
                       <th>User</th>
-                      <th>Role</th>
+                      <th style={{ whiteSpace: 'nowrap', width: '100px' }}>Role</th>
                       <th>Action</th>
                       <th>Details</th>
                     </tr>
