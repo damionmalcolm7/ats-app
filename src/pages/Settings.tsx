@@ -60,17 +60,14 @@ export default function Settings() {
     enabled: isSuperAdmin
   })
 
-  const [auditPage, setAuditPage] = useState(0)
-  const AUDIT_PAGE_SIZE = 20
-
   const { data: auditLogs = [] } = useQuery({
-    queryKey: ['audit-logs', auditPage],
+    queryKey: ['audit-logs'],
     queryFn: async () => {
       const { data } = await supabase
         .from('audit_logs')
         .select('*')
         .order('created_at', { ascending: false })
-        .range(auditPage * AUDIT_PAGE_SIZE, (auditPage + 1) * AUDIT_PAGE_SIZE - 1)
+        .limit(100)
       return data || []
     },
     enabled: isSuperAdmin
@@ -136,6 +133,15 @@ export default function Settings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hr-invites'] })
       toast.success(`Invite sent to ${inviteEmail}!`)
+      if (profile) {
+        createAuditLog({
+          user_id: profile.user_id,
+          user_name: profile.full_name || 'Unknown',
+          user_role: profile.role || 'unknown',
+          action: 'INVITE_TEAM_MEMBER',
+          details: { email: inviteEmail, role: inviteRole }
+        })
+      }
       setInviteEmail('')
       setInviteRole('hr')
     },
@@ -171,7 +177,21 @@ export default function Settings() {
       const { error } = await supabase.from('profiles').update({ role }).eq('user_id', userId)
       if (error) throw error
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['hr-users'] }); toast.success('Role updated') },
+    onSuccess: (_, variables: any) => {
+      queryClient.invalidateQueries({ queryKey: ['hr-users'] })
+      toast.success('Role updated')
+      if (profile) {
+        createAuditLog({
+          user_id: profile.user_id,
+          user_name: profile.full_name || 'Unknown',
+          user_role: profile.role || 'unknown',
+          action: 'CHANGE_MEMBER_ROLE',
+          entity_type: 'profile',
+          entity_id: variables.userId,
+          details: { new_role: variables.role }
+        })
+      }
+    },
     onError: (err: any) => toast.error(err.message)
   })
 
@@ -196,7 +216,20 @@ export default function Settings() {
       const { error } = await supabase.from('profiles').update({ role: 'applicant' }).eq('user_id', userId)
       if (error) throw error
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['hr-users'] }); toast.success('User removed from HR team') },
+    onSuccess: (_, userId: string) => {
+      queryClient.invalidateQueries({ queryKey: ['hr-users'] })
+      toast.success('User removed from HR team')
+      if (profile) {
+        createAuditLog({
+          user_id: profile.user_id,
+          user_name: profile.full_name || 'Unknown',
+          user_role: profile.role || 'unknown',
+          action: 'REMOVE_TEAM_MEMBER',
+          entity_type: 'profile',
+          entity_id: userId
+        })
+      }
+    },
     onError: (err: any) => toast.error(err.message)
   })
 
@@ -498,9 +531,9 @@ export default function Settings() {
                         </td>
                         <td style={{ fontWeight: '500', fontSize: '0.875rem' }}>{log.user_name}</td>
                         <td>
-                          <span className={`badge ${log.user_role === 'super_admin' ? 'badge-purple' : 'badge-blue'}`} style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-  {log.user_role === 'super_admin' ? 'Super Admin' : 'HR Staff'}
-</span>
+                          <span className={`badge ${log.user_role === 'super_admin' ? 'badge-purple' : 'badge-blue'}`} style={{ textTransform: 'capitalize', fontSize: '0.75rem' }}>
+                            {log.user_role?.replace('_', ' ')}
+                          </span>
                         </td>
                         <td>
                           <span style={{
@@ -527,13 +560,6 @@ export default function Settings() {
                     ))}
                   </tbody>
                 </table>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem' }}>
-  <button className="btn-secondary" onClick={() => setAuditPage(p => p - 1)} disabled={auditPage === 0}
-    style={{ fontSize: '0.8125rem' }}>← Previous</button>
-  <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Page {auditPage + 1}</span>
-  <button className="btn-secondary" onClick={() => setAuditPage(p => p + 1)} disabled={auditLogs.length < AUDIT_PAGE_SIZE}
-    style={{ fontSize: '0.8125rem' }}>Next →</button>
-</div>
               </div>
             )}
           </div>
