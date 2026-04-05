@@ -467,6 +467,17 @@ export default function ApplicantProfile() {
                           await supabase.from('documents').delete().eq('id', doc.id)
                           queryClient.invalidateQueries({ queryKey: ['documents', id] })
                           toast.success('Document deleted')
+                          if (profile) {
+                            createAuditLog({
+                              user_id: profile.user_id,
+                              user_name: profile.full_name || 'Unknown',
+                              user_role: profile.role || 'unknown',
+                              action: 'DELETE_DOCUMENT',
+                              entity_type: 'document',
+                              entity_id: doc.id,
+                              details: { document_name: doc.name, application_id: id }
+                            })
+                          }
                         }
                       }}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)', padding: '0.25rem' }}
