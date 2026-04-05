@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { sendEmail as sendEmailViaEdge } from '../lib/email'
+import { createAuditLog } from '../lib/audit'
 import toast from 'react-hot-toast'
 import { X } from 'lucide-react'
 
@@ -84,6 +85,17 @@ export default function SendEmailModal({ applicationId, applicantEmail, applican
       })
       if (!result.success) throw new Error(result.error || 'Failed to send email')
       toast.success(`Email sent from ${senderName}`)
+      if (profile) {
+        createAuditLog({
+          user_id: profile.user_id,
+          user_name: profile.full_name || 'Unknown',
+          user_role: profile.role || 'unknown',
+          action: 'SEND_EMAIL',
+          entity_type: 'application',
+          entity_id: applicationId,
+          details: { to: applicantEmail, subject, applicant_name: applicantName }
+        })
+      }
       onClose()
     } catch (err: any) {
       toast.error(err.message || 'Failed to send email')
