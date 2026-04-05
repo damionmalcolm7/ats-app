@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { sendStatusEmail } from '../lib/email'
+import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Mail, Phone, FileText, Star, Tag, Plus, X, Download, Calendar, Upload } from 'lucide-react'
 import ScheduleInterview from '../components/ScheduleInterview'
@@ -18,6 +19,7 @@ export default function ApplicantProfile() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { profile } = useAuth()
   const [activeTab, setActiveTab] = useState('overview')
   const [tagInput, setTagInput] = useState('')
   const [note, setNote] = useState('')
