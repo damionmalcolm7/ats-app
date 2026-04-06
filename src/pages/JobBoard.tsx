@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { useTheme } from '../contexts/ThemeContext'
@@ -25,6 +25,10 @@ const JOB_TYPES = [
 export default function JobBoard() {
   const navigate = useNavigate()
   const { user, profile } = useAuth()
+  useEffect(() => {
+  document.body.classList.add('applicant-page')
+  return () => document.body.classList.remove('applicant-page')
+}, [])
   const { theme } = useTheme()
   const LIGHT_LOGO = 'https://ljgjgaojkihpaykfewpa.supabase.co/storage/v1/object/public/avatars/Logo%20Text%20and%20Slogan%20to%20left.png'
   const [search, setSearch] = useState('')
