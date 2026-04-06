@@ -233,3 +233,64 @@ textarea.input { resize: vertical; min-height: 100px; }
 .job-description li { margin-bottom: 0.375rem; }
 .job-description strong { color: var(--text-primary); font-weight: 600; }
 .job-description blockquote { border-left: 3px solid var(--blue-500); padding-left: 1rem; color: var(--text-muted); margin: 0.75rem 0; }
+
+/* ── Mobile Responsiveness ── */
+
+/* Job Detail - hide sidebar on mobile */
+@media (max-width: 768px) {
+  .job-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .job-detail-sidebar {
+    display: none !important;
+  }
+}
+
+/* Job Board - responsive filters */
+@media (max-width: 640px) {
+  .job-board-filters {
+    flex-direction: column !important;
+  }
+  .job-board-filters select,
+  .job-board-filters input {
+    width: 100% !important;
+  }
+}
+
+/* Applicant Portal - stack sidebar on mobile */
+@media (max-width: 768px) {
+  .portal-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .portal-sidebar {
+    position: static !important;
+  }
+}
+
+/* HR Dashboard tables - horizontal scroll on mobile */
+@media (max-width: 900px) {
+  .table-container {
+    overflow-x: auto !important;
+  }
+  .table-container table {
+    min-width: 700px;
+  }
+}
+
+/* HR Dashboard sidebar - hide on mobile */
+@media (max-width: 900px) {
+  aside {
+    display: none !important;
+  }
+  .main-content-with-sidebar {
+    margin-left: 0 !important;
+  }
+}
+
+/* General mobile padding */
+@media (max-width: 640px) {
+  .card {
+    padding: 1rem !important;
+  }
+  h1 { font-size: 1.25rem !important; }
+}
