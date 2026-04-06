@@ -231,8 +231,6 @@ textarea.input { resize: vertical; min-height: 100px; }
 .job-description ul { list-style-type: disc; }
 .job-description ol { list-style-type: decimal; }
 .job-description li { margin-bottom: 0.125rem; line-height: 1.4; }
-.job-description ul li p,
-.job-description ol li p { margin: 0 !important; padding: 0 !important; line-height: 1.5 !important; }
 .job-description strong { color: var(--text-primary); font-weight: 600; }
 .job-description blockquote { border-left: 3px solid var(--blue-500); padding-left: 1rem; color: var(--text-muted); margin: 0.75rem 0; }
 
@@ -296,6 +294,7 @@ textarea.input { resize: vertical; min-height: 100px; }
   }
   h1 { font-size: 1.25rem !important; }
 }
+
 /* ── Force light mode on applicant-facing pages ── */
 body.applicant-page {
   background-color: #f0f4f8;
@@ -311,4 +310,21 @@ body.applicant-page {
   --text-muted: #475569;
   --border: #cbd5e1;
   --card: #ffffff;
+}
+
+/* ── Mobile Navigation ── */
+@media (max-width: 900px) {
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+  aside {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  aside.sidebar-open {
+    transform: translateX(0) !important;
+  }
+  .main-content-with-sidebar {
+    margin-left: 0 !important;
+  }
 }
