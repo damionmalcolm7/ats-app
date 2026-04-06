@@ -338,7 +338,7 @@ export default function JobDetail() {
               <button className="btn-primary" onClick={() => setShowForm(true)} style={{ padding: '0.75rem 2rem', fontSize: '1rem' }}>Apply for This Position</button>
             </div>
             <div className="card" style={{ marginBottom: '1.25rem' }}>
-              <div className="job-description" dangerouslySetInnerHTML={{ __html: job.description?.replace(/<li><p>/g, '<li>').replace(/<\/p><\/li>/g, '</li>') }} />
+              <div className="job-description" dangerouslySetInnerHTML={{ __html: job.description }} />
             </div>
             {job.required_skills?.length > 0 && (
               <div className="card">
