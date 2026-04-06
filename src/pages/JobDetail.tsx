@@ -324,7 +324,7 @@ export default function JobDetail() {
 
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: 'clamp(1rem, 4vw, 2rem)' }}>
         {!showForm ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '1.5rem', alignItems: 'start' }}>
+          <div className='job-detail-grid' style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '1.5rem', alignItems: 'start' }}>
           <div>
           <>
             <div className="card" style={{ marginBottom: '1.25rem' }}>
@@ -338,7 +338,8 @@ export default function JobDetail() {
               <button className="btn-primary" onClick={() => setShowForm(true)} style={{ padding: '0.75rem 2rem', fontSize: '1rem' }}>Apply for This Position</button>
             </div>
             <div className="card" style={{ marginBottom: '1.25rem' }}>
-              <div className="job-description" dangerouslySetInnerHTML={{ __html: job.description }} />
+              <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem' }}>Job Description</h2>
+              <div style={{ color: 'var(--text-secondary)', lineHeight: 1.8, whiteSpace: 'pre-wrap', fontSize: '0.9375rem' }}>{job.description}</div>
             </div>
             {job.required_skills?.length > 0 && (
               <div className="card">
@@ -354,7 +355,7 @@ export default function JobDetail() {
           </div>
 
           {/* Sidebar - Other Jobs */}
-          <div style={{ position: 'sticky', top: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className='job-detail-sidebar' style={{ position: 'sticky', top: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className='card' style={{ padding: '1.25rem' }}>
               <h3 style={{ fontWeight: '700', fontSize: '0.9375rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Other Opportunities</h3>
               {otherJobs.length === 0 ? (
