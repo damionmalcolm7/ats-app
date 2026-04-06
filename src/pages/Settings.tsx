@@ -267,7 +267,7 @@ export default function Settings() {
         <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>Manage your preferences</p>
       </div>
 
-      style={{ display: 'flex', gap: '0.25rem', marginBottom: '1.5rem', background: 'var(--navy-900)', borderRadius: '10px', padding: '0.25rem', width: '100%', flexWrap: 'wrap' }}
+      <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1.5rem', background: 'var(--navy-900)', borderRadius: '10px', padding: '0.25rem', width: '100%', flexWrap: 'wrap' }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id)}
             style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '0.875rem', fontWeight: '500', background: activeTab === t.id ? 'var(--blue-500)' : 'transparent', color: activeTab === t.id ? 'white' : 'var(--text-muted)', transition: 'all 0.2s' }}>
