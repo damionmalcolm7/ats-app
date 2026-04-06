@@ -401,7 +401,7 @@ export default function Analytics() {
               <button className="btn-secondary" onClick={exportCSV} disabled={reportData.length === 0}>
                 <Download size={15} /> Export Excel (CSV)
               </button>
-              <button className="btn-primary" onClick={exportPDF} disabled={reportData.length === 0 || exporting}>
+              <button className="btn-primary" onClick={exportTablePDF} disabled={reportData.length === 0 || exporting}>
                 {exporting ? <><span className="spinner" /> Generating...</> : <><FileText size={15} /> Export Data Table (PDF)</>}
               </button>
             </div>
