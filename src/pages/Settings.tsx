@@ -22,6 +22,8 @@ export default function Settings() {
   const [uploading, setUploading] = useState(false)
   const [editingUser, setEditingUser] = useState<any>(null)
   const [editForm, setEditForm] = useState({ full_name: '', job_title: '' })
+  const [auditPage, setAuditPage] = useState(0)
+  const AUDIT_PAGE_SIZE = 20
 
   const { data: savedSettings, isLoading: settingsLoading } = useQuery({
     queryKey: ['settings'],
@@ -61,13 +63,13 @@ export default function Settings() {
   })
 
   const { data: auditLogs = [] } = useQuery({
-    queryKey: ['audit-logs'],
+    queryKey: ['audit-logs', auditPage],
     queryFn: async () => {
       const { data } = await supabase
         .from('audit_logs')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(100)
+        .range(auditPage * AUDIT_PAGE_SIZE, (auditPage + 1) * AUDIT_PAGE_SIZE - 1)
       return data || []
     },
     enabled: isSuperAdmin
@@ -518,7 +520,7 @@ export default function Settings() {
                     <tr>
                       <th>Date & Time</th>
                       <th>User</th>
-                      <th style={{ whiteSpace: 'nowrap', width: '100px' }}>Role</th>
+                      <th>Role</th>
                       <th>Action</th>
                       <th>Details</th>
                     </tr>
@@ -530,7 +532,7 @@ export default function Settings() {
                           {new Date(log.created_at).toLocaleString()}
                         </td>
                         <td style={{ fontWeight: '500', fontSize: '0.875rem' }}>{log.user_name}</td>
-                        <td style={{ whiteSpace: 'nowrap' }}>
+                        <td>
                           <span className={`badge ${log.user_role === 'super_admin' ? 'badge-purple' : 'badge-blue'}`} style={{ textTransform: 'capitalize', fontSize: '0.75rem' }}>
                             {log.user_role?.replace('_', ' ')}
                           </span>
@@ -560,6 +562,12 @@ export default function Settings() {
                     ))}
                   </tbody>
                 </table>
+                {/* Pagination */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem' }}>
+                  <button className="btn-secondary" onClick={() => setAuditPage(p => p - 1)} disabled={auditPage === 0} style={{ fontSize: '0.8125rem' }}>← Previous</button>
+                  <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Page {auditPage + 1}</span>
+                  <button className="btn-secondary" onClick={() => setAuditPage(p => p + 1)} disabled={auditLogs.length < AUDIT_PAGE_SIZE} style={{ fontSize: '0.8125rem' }}>Next →</button>
+                </div>
               </div>
             )}
           </div>
