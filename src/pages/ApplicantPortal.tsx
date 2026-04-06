@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 import { notifyHRTeam } from '../lib/notifications'
@@ -12,6 +12,10 @@ const statusColors: Record<string, string> = {
 }
 
 export default function ApplicantPortal() {
+  useEffect(() => {
+  document.body.classList.add('applicant-page')
+  return () => document.body.classList.remove('applicant-page')
+}, [])
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null)
