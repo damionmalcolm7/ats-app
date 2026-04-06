@@ -65,7 +65,7 @@ export default function Dashboard() {
       </div>
 
       {/* Charts */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
         <div className="card">
           <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1.25rem' }}>Hiring Funnel</h3>
           <ResponsiveContainer width="100%" height={260}>
