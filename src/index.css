@@ -231,7 +231,8 @@ textarea.input { resize: vertical; min-height: 100px; }
 .job-description ul { list-style-type: disc; }
 .job-description ol { list-style-type: decimal; }
 .job-description li { margin-bottom: 0.125rem; line-height: 1.4; }
-.job-description li p { margin: 0 !important; line-height: 1.4 !important; }
+.job-description ul li p,
+.job-description ol li p { margin: 0 !important; padding: 0 !important; line-height: 1.5 !important; }
 .job-description strong { color: var(--text-primary); font-weight: 600; }
 .job-description blockquote { border-left: 3px solid var(--blue-500); padding-left: 1rem; color: var(--text-muted); margin: 0.75rem 0; }
 
