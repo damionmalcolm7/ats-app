@@ -61,20 +61,21 @@ export default function Layout({ children }: { children: ReactNode }) {
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--navy-950)' }}>
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40, display: 'none' }} />
+        <div onClick={() => setSidebarOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40 }} />
       )}
 
       {/* Sidebar */}
       <aside style={{
         width: '240px', background: 'var(--navy-900)', borderRight: '1px solid var(--border)',
-        display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 30
-      }}>
+        display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50,
+        transform: sidebarOpen ? 'translateX(0)' : undefined,
+      }} className={sidebarOpen ? 'sidebar-open' : ''}>
         {/* Logo */}
         <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.75rem', minHeight: '64px' }}>
           {settings?.company_logo ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
               <img src={theme === 'light' ? LIGHT_LOGO : settings.company_logo} alt="Company Logo" style={{ maxHeight: '36px', maxWidth: '160px', objectFit: 'contain' }} />
-              <div style={{ fontSize: '0.65rem', color: 'var(--blue-400)', fontWeight: '600', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Recruitment Portal</div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--blue-400)', fontWeight: '600', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Recruitment Hub</div>
             </div>
           ) : (
             <>
@@ -83,7 +84,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               </div>
               <div>
                 <div style={{ fontSize: '0.875rem', fontWeight: '700', color: 'var(--text-primary)', lineHeight: 1.2 }}>{settings?.company_name || 'ATS Platform'}</div>
-                <div style={{ fontSize: '0.65rem', color: 'var(--blue-400)', fontWeight: '600', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Recruitment Portal</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--blue-400)', fontWeight: '600', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Recruitment Hub</div>
               </div>
             </>
           )}
@@ -118,6 +119,11 @@ export default function Layout({ children }: { children: ReactNode }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '0 1.5rem', position: 'sticky', top: 0, zIndex: 20
         }}>
+          <button onClick={() => setSidebarOpen(!sidebarOpen)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '0.5rem', display: 'none', alignItems: 'center', justifyContent: 'center' }}
+            className="mobile-menu-btn">
+            <Menu size={22} />
+          </button>
           <div style={{ flex: 1, maxWidth: '400px' }}>
             <input className="input" placeholder="Search jobs, applicants..." style={{ background: 'var(--navy-800)', height: '36px', fontSize: '0.8125rem' }} />
           </div>
