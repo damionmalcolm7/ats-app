@@ -475,7 +475,11 @@ export default function ApplicantProfile() {
                               action: 'DELETE_DOCUMENT',
                               entity_type: 'document',
                               entity_id: doc.id,
-                              details: { document_name: doc.name, application_id: id }
+                              details: { 
+                                document_name: doc.name, 
+                                candidate: details?.full_name || 'Unknown',
+                                job_title: app?.job?.title || 'Unknown'
+                              }
                             })
                           }
                         }
