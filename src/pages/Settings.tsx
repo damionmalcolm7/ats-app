@@ -531,10 +531,10 @@ export default function Settings() {
                         <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                           {new Date(log.created_at).toLocaleString()}
                         </td>
-                        <td style={{ fontWeight: '500', fontSize: '0.875rem' }}>{log.user_name}</td>
-                        <td>
-                          <span className={`badge ${log.user_role === 'super_admin' ? 'badge-purple' : 'badge-blue'}`} style={{ textTransform: 'capitalize', fontSize: '0.75rem' }}>
-                            {log.user_role?.replace('_', ' ')}
+                        <td style={{ fontWeight: '500', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>{log.user_name}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <span className={`badge ${log.user_role === 'super_admin' ? 'badge-purple' : 'badge-blue'}`} style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                            {log.user_role === 'super_admin' ? 'Super Admin' : 'HR Staff'}
                           </span>
                         </td>
                         <td>
