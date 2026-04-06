@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
@@ -90,6 +90,10 @@ Return ONLY the JSON object, no markdown, no explanation.`
 }
 
 export default function JobDetail() {
+  useEffect(() => {
+  document.body.classList.add('applicant-page')
+  return () => document.body.classList.remove('applicant-page')
+}, [])
   const { id } = useParams()
   const navigate = useNavigate()
   const [showForm, setShowForm] = useState(false)
