@@ -72,7 +72,7 @@ export default function JobBoard() {
       <div style={{ background: 'var(--navy-900)', borderBottom: '1px solid var(--border)', padding: '0.875rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {settings?.company_logo ? (
-            <img src={theme === 'light' ? LIGHT_LOGO : settings.company_logo} alt={companyName} style={{ maxHeight: '36px', maxWidth: '140px', objectFit: 'contain' }} />
+            <img src={LIGHT_LOGO} alt={companyName} style={{ maxHeight: '36px', maxWidth: '140px', objectFit: 'contain' }} />
           ) : (
             <>
               <div style={{ width: '32px', height: '32px', background: 'var(--blue-500)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
