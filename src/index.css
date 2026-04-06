@@ -296,3 +296,19 @@ textarea.input { resize: vertical; min-height: 100px; }
   }
   h1 { font-size: 1.25rem !important; }
 }
+/* ── Force light mode on applicant-facing pages ── */
+body.applicant-page {
+  background-color: #f0f4f8;
+  --navy-950: #f0f4f8;
+  --navy-900: #e2e8f0;
+  --navy-800: #ffffff;
+  --navy-700: #f1f5f9;
+  --navy-600: #cbd5e1;
+  --blue-500: #2563eb;
+  --blue-400: #1d4ed8;
+  --text-primary: #0f172a;
+  --text-secondary: #1e293b;
+  --text-muted: #475569;
+  --border: #cbd5e1;
+  --card: #ffffff;
+}
