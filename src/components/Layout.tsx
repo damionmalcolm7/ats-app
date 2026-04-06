@@ -67,8 +67,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <aside style={{
         width: '240px', background: 'var(--navy-900)', borderRight: '1px solid var(--border)',
-        display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50,
-        transform: sidebarOpen ? 'translateX(0)' : undefined,
+        display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50
       }} className={sidebarOpen ? 'sidebar-open' : ''}>
         {/* Logo */}
         <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.75rem', minHeight: '64px' }}>
@@ -124,7 +123,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             className="mobile-menu-btn">
             <Menu size={22} />
           </button>
-          <div style={{ flex: 1, maxWidth: '400px' }}>
+          <div style={{ flex: 1, maxWidth: '400px' }} className="search-bar-desktop">
             <input className="input" placeholder="Search jobs, applicants..." style={{ background: 'var(--navy-800)', height: '36px', fontSize: '0.8125rem' }} />
           </div>
 
