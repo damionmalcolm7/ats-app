@@ -82,6 +82,65 @@ export default function Analytics() {
     }
   })
 
+  async function exportTablePDF() {
+    setExporting(true)
+    try {
+      const doc = new jsPDF('landscape', 'mm', 'a4')
+      const pageW = doc.internal.pageSize.width
+
+      doc.setFillColor(27, 58, 107)
+      doc.rect(0, 0, pageW, 18, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(13)
+      doc.setFont('helvetica', 'bold')
+      doc.text('National Housing Trust — Applicant Data', 14, 12)
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'normal')
+      doc.text(`Generated: ${new Date().toLocaleString()}  |  ${reportData.length} records`, pageW - 14, 12, { align: 'right' })
+
+      const activeFilters: string[] = []
+      if (filters.status !== 'all') activeFilters.push(`Status: ${filters.status}`)
+      if (filters.location !== 'all') activeFilters.push(`Location: ${filters.location}`)
+      if (filters.employment_type !== 'all') activeFilters.push(`Type: ${filters.employment_type}`)
+      if (filters.department) activeFilters.push(`Department: ${filters.department}`)
+
+      let startY = 24
+      if (activeFilters.length > 0) {
+        doc.setTextColor(100, 100, 100)
+        doc.setFontSize(8)
+        doc.text(`Filters: ${activeFilters.join('  |  ')}`, 14, 24)
+        startY = 30
+      }
+
+      ;(doc as any).autoTable({
+        startY,
+        head: [['Applicant Name', 'Email', 'Job Title', 'Department', 'Location', 'Type', 'Status', 'Match Score', 'Source', 'Applied Date']],
+        body: reportData.map((r: any) => [
+          r.applicant_details?.full_name || '—',
+          r.applicant_details?.email || '—',
+          r.job?.title || '—',
+          r.job?.department || '—',
+          r.job?.location || '—',
+          r.job?.employment_type || '—',
+          (r.status || '—').charAt(0).toUpperCase() + (r.status || '').slice(1),
+          r.match_score != null ? `${r.match_score}%` : '—',
+          r.source || 'Direct',
+          new Date(r.created_at).toLocaleDateString()
+        ]),
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [27, 58, 107], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
+        margin: { left: 14, right: 14 }
+      })
+
+      doc.save(`NHT_Applicant_Data_${new Date().toISOString().split('T')[0]}.pdf`)
+    } catch (err: any) {
+      console.error('PDF export error:', err)
+    } finally {
+      setExporting(false)
+    }
+  }
+
   function exportCSV() {
     const headers = ['Applicant Name', 'Email', 'Phone', 'Job Title', 'Department', 'Location', 'Job Type', 'Status', 'Match Score', 'Source', 'Applied Date']
     const rows = reportData.map(r => [
