@@ -332,3 +332,18 @@ body.applicant-page {
     margin-left: 0 !important;
   }
 }
+@media (max-width: 640px) {
+  .settings-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+  .settings-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+  .settings-tabs button {
+    flex-shrink: 0 !important;
+    padding: 0.5rem 0.875rem !important;
+    font-size: 0.8125rem !important;
+  }
+}
