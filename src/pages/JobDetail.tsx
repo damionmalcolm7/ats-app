@@ -242,6 +242,7 @@ export default function JobDetail() {
         { onConflict: 'user_id' }
       )
 
+      console.log('Inserting application with applicantId:', applicantId, 'job_id:', id)
       const { data: appData, error: appError } = await supabase.from('applications').insert({
         job_id: id, applicant_id: applicantId, cover_letter: form.cover_letter, status: 'applied', source: source || 'Direct'
       }).select().single()
