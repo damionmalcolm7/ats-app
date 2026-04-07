@@ -237,10 +237,13 @@ export default function JobDetail() {
 
       if (!applicantId) throw new Error('Could not create applicant account')
 
-      await supabase.from('profiles').upsert(
-        { user_id: applicantId, full_name: form.full_name, email: form.email, role: 'applicant' },
-        { onConflict: 'user_id' }
-      )
+     // Only create profile for new applicants
+if (existingProfiles && existingProfiles.length === 0) {
+  await supabase.from('profiles').upsert(
+    { user_id: applicantId, full_name: form.full_name, email: form.email, role: 'applicant' },
+    { onConflict: 'user_id' }
+  )
+}
 
       console.log('Inserting application with applicantId:', applicantId, 'job_id:', id)
       const { data: appData, error: appError } = await supabase.from('applications').insert({
