@@ -348,3 +348,8 @@ body.applicant-page {
     font-size: 0.8125rem !important;
   }
 }
+.welcome-short { display: none; }
+@media (max-width: 640px) {
+  .welcome-full { display: none; }
+  .welcome-short { display: inline; }
+}
