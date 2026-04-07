@@ -223,6 +223,16 @@ const { data: existingProfile } = await supabase
 
 let applicantId = existingProfile?.user_id
 
+// Check if applicant already exists in applicant_details
+const { data: existingDetail } = await supabase
+  .from('applicant_details')
+  .select('application_id, applications(applicant_id)')
+  .eq('email', form.email)
+  .limit(1)
+  .single()
+
+let applicantId = (existingDetail?.applications as any)?.applicant_id
+
 // Only create new account if doesn't exist
 if (!applicantId) {
   const { data: authData } = await supabase.auth.signUp({
