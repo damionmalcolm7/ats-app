@@ -223,7 +223,7 @@ const { data: existingProfile } = await supabase
 
 let applicantId = existingProfile?.user_id
 
-// Check if applicant already exists in applicant_details
+// Check if applicant already exists
 const { data: existingDetail } = await supabase
   .from('applicant_details')
   .select('application_id, applications(applicant_id)')
