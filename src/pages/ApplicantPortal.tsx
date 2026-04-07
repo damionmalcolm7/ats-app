@@ -13,9 +13,10 @@ const statusColors: Record<string, string> = {
 
 export default function ApplicantPortal() {
   useEffect(() => {
-  document.body.classList.add('applicant-page')
-  return () => document.body.classList.remove('applicant-page')
-}, [])
+    document.body.classList.add('applicant-page')
+    return () => document.body.classList.remove('applicant-page')
+  }, [])
+
   const { profile, signOut } = useAuth()
   const navigate = useNavigate()
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null)
@@ -67,28 +68,36 @@ export default function ApplicantPortal() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--navy-950)' }}>
       {/* Header */}
-<div style={{ background: 'var(--navy-900)', borderBottom: '1px solid var(--border)', padding: '0.875rem 1.5rem' }}>
-  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-      {settings?.company_logo ? (
-        <img src="https://ljgjgaojkihpaykfewpa.supabase.co/storage/v1/object/public/avatars/Logo%20Text%20and%20Slogan%20to%20left.png" alt={settings.company_name} style={{ maxHeight: '40px', maxWidth: '160px', objectFit: 'contain' }} />
-      ) : (
-        <>
-          <div style={{ width: '36px', height: '36px', background: 'var(--blue-500)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Briefcase size={18} color="white" />
+      <div style={{ background: 'var(--navy-900)', borderBottom: '1px solid var(--border)', padding: '0.875rem 1.5rem' }}>
+        {/* Main header row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {settings?.company_logo ? (
+              <img src="https://ljgjgaojkihpaykfewpa.supabase.co/storage/v1/object/public/avatars/Logo%20Text%20and%20Slogan%20to%20left.png" alt={settings.company_name} style={{ maxHeight: '40px', maxWidth: '160px', objectFit: 'contain' }} />
+            ) : (
+              <>
+                <div style={{ width: '36px', height: '36px', background: 'var(--blue-500)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Briefcase size={18} color="white" />
+                </div>
+                <span style={{ fontWeight: '700' }}>{settings?.company_name || 'Applicant Portal'}</span>
+              </>
+            )}
           </div>
-          <span style={{ fontWeight: '700' }}>{settings?.company_name || 'Applicant Portal'}</span>
-        </>
-      )}
-    </div>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-      <span className="welcome-full" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Welcome, {profile?.full_name}</span>
-      <span className="welcome-short" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Hi, {profile?.full_name?.split(' ')[0]}!</span>
-      <button className="btn-secondary" onClick={handleSignOut} style={{ fontSize: '0.8125rem', padding: '0.5rem' }} title="Sign Out"><LogOut size={14} /></button>
-    </div>
-  </div>
-  <button className="btn-primary" onClick={() => navigate('/jobs')} style={{ width: '100%', justifyContent: 'center', fontSize: '0.8125rem' }}>Browse Jobs</button>
-</div>
+
+          {/* Right side */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span className="welcome-full" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Welcome, {profile?.full_name}</span>
+            <span className="welcome-short" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Hi, {profile?.full_name?.split(' ')[0]}!</span>
+            {/* Browse Jobs - hidden on mobile */}
+            <button className="btn-secondary portal-browse-desktop" onClick={() => navigate('/jobs')} style={{ fontSize: '0.8125rem' }}>Browse Jobs</button>
+            <button className="btn-secondary" onClick={handleSignOut} style={{ fontSize: '0.8125rem', padding: '0.5rem' }} title="Sign Out"><LogOut size={14} /></button>
+          </div>
+        </div>
+
+        {/* Browse Jobs - mobile only, full width */}
+        <button className="btn-primary portal-browse-mobile" onClick={() => navigate('/jobs')} style={{ width: '100%', justifyContent: 'center', fontSize: '0.8125rem', marginTop: '0.75rem' }}>Browse Jobs</button>
+      </div>
 
       <div className='portal-grid' style={{ maxWidth: '1200px', margin: '0 auto', padding: 'clamp(1rem, 3vw, 2rem)', display: 'grid', gridTemplateColumns: '1fr 300px', gap: '1.5rem', alignItems: 'start' }}>
 
@@ -193,7 +202,7 @@ export default function ApplicantPortal() {
         </div>
 
         {/* RIGHT — Sidebar */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'sticky', top: '1.5rem', marginTop: '3.5rem' }}>
+        <div className="portal-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', position: 'sticky', top: '1.5rem', marginTop: '3.5rem' }}>
 
           {/* Application Summary */}
           {selectedApp && (
