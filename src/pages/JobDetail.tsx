@@ -9,7 +9,6 @@ import { ArrowLeft, MapPin, Briefcase, Clock, DollarSign, Upload, X, Plus, Check
 const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY
 
 async function parseResumeWithClaude(file: File): Promise<any> {
-  // Convert file to base64
   const base64 = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => {
@@ -21,7 +20,6 @@ async function parseResumeWithClaude(file: File): Promise<any> {
   })
 
   const isPDF = file.type === 'application/pdf'
-  const isDocx = file.name.endsWith('.docx') || file.name.endsWith('.doc')
 
   let messageContent: any[]
 
@@ -48,11 +46,10 @@ Return ONLY the JSON object, no markdown, no explanation.`
       }
     ]
   } else {
-    // For DOCX files, ask Claude to parse as text
     messageContent = [
       {
         type: 'text',
-        text: `I have a resume file but cannot read it directly. Based on a typical resume, please return a template JSON. However since this is a DOCX file I cannot parse it - return this exact JSON to indicate that:
+        text: `I have a resume file but cannot read it directly. Since this is a DOCX file I cannot parse it - return this exact JSON:
 {"parse_error": "DOCX format - please upload PDF for automatic parsing"}`
       }
     ]
@@ -91,9 +88,10 @@ Return ONLY the JSON object, no markdown, no explanation.`
 
 export default function JobDetail() {
   useEffect(() => {
-  document.body.classList.add('applicant-page')
-  return () => document.body.classList.remove('applicant-page')
-}, [])
+    document.body.classList.add('applicant-page')
+    return () => document.body.classList.remove('applicant-page')
+  }, [])
+
   const { id } = useParams()
   const navigate = useNavigate()
   const [showForm, setShowForm] = useState(false)
@@ -162,33 +160,32 @@ export default function JobDetail() {
     setParsing(true)
     try {
       toast.loading('Reading your resume...', { id: 'parsing' })
-      const parsed = await parseResumeWithClaude(file)
+      const parsedData = await parseResumeWithClaude(file)
 
-      if (parsed.parse_error) {
-        setParseError(parsed.parse_error)
-        toast.error(parsed.parse_error, { id: 'parsing' })
+      if (parsedData.parse_error) {
+        setParseError(parsedData.parse_error)
+        toast.error(parsedData.parse_error, { id: 'parsing' })
         return
       }
 
-      // Pre-fill form with parsed data
       setForm(prev => ({
         ...prev,
-        full_name: parsed.full_name || prev.full_name,
-        email: parsed.email || prev.email,
-        phone: parsed.phone || prev.phone,
-        years_experience: parsed.years_experience?.toString() || prev.years_experience,
-        skills: parsed.skills?.length ? parsed.skills : prev.skills,
-        cover_letter: parsed.summary ? `${parsed.summary}` : prev.cover_letter,
+        full_name: parsedData.full_name || prev.full_name,
+        email: parsedData.email || prev.email,
+        phone: parsedData.phone || prev.phone,
+        years_experience: parsedData.years_experience?.toString() || prev.years_experience,
+        skills: parsedData.skills?.length ? parsedData.skills : prev.skills,
+        cover_letter: parsedData.summary ? `${parsedData.summary}` : prev.cover_letter,
       }))
 
-      if (parsed.work_history?.length) {
-        setWorkHistory(parsed.work_history.map((w: any) => ({
+      if (parsedData.work_history?.length) {
+        setWorkHistory(parsedData.work_history.map((w: any) => ({
           title: w.title || '', company: w.company || '', duration: w.duration || ''
         })))
       }
 
-      if (parsed.education?.length) {
-        setEducation(parsed.education.map((e: any) => ({
+      if (parsedData.education?.length) {
+        setEducation(parsedData.education.map((e: any) => ({
           degree: e.degree || '', institution: e.institution || '', year: e.year || ''
         })))
       }
@@ -214,38 +211,32 @@ export default function JobDetail() {
         resumeUrl = publicUrl
       }
 
-      // Check if applicant already exists
-const { data: existingProfile } = await supabase
-  .from('profiles')
-  .select('user_id')
-  .eq('email', form.email)
-  .single()
+      // Check if applicant already exists by email
+      const { data: existingDetail } = await supabase
+        .from('applicant_details')
+        .select('application_id, applications(applicant_id)')
+        .eq('email', form.email)
+        .limit(1)
+        .single()
 
-let applicantId = existingProfile?.user_id
+      let applicantId = (existingDetail?.applications as any)?.applicant_id
 
-// Check if applicant already exists
-const { data: existingDetail } = await supabase
-  .from('applicant_details')
-  .select('application_id, applications(applicant_id)')
-  .eq('email', form.email)
-  .limit(1)
-  .single()
+      // Only create new account if applicant doesn't exist
+      if (!applicantId) {
+        const { data: authData } = await supabase.auth.signUp({
+          email: form.email,
+          password: Math.random().toString(36).slice(-10) + 'A1!',
+          options: { data: { full_name: form.full_name, role: 'applicant' } }
+        })
+        applicantId = authData?.user?.id
+      }
 
-let applicantId = (existingDetail?.applications as any)?.applicant_id
+      if (!applicantId) throw new Error('Could not create applicant account')
 
-// Only create new account if doesn't exist
-if (!applicantId) {
-  const { data: authData } = await supabase.auth.signUp({
-    email: form.email,
-    password: Math.random().toString(36).slice(-10) + 'A1!',
-    options: { data: { full_name: form.full_name, role: 'applicant' } }
-  })
-  applicantId = authData?.user?.id
-}
-
-if (!applicantId) throw new Error('Could not create applicant account')
-
-      await supabase.from('profiles').upsert({ user_id: applicantId, full_name: form.full_name, email: form.email, role: 'applicant' }, { onConflict: 'user_id' })
+      await supabase.from('profiles').upsert(
+        { user_id: applicantId, full_name: form.full_name, email: form.email, role: 'applicant' },
+        { onConflict: 'user_id' }
+      )
 
       const { data: appData, error: appError } = await supabase.from('applications').insert({
         job_id: id, applicant_id: applicantId, cover_letter: form.cover_letter, status: 'applied', source: source || 'Direct'
@@ -260,7 +251,6 @@ if (!applicantId) throw new Error('Could not create applicant account')
 
       await supabase.from('applications').update({ match_score: matchScore }).eq('id', appData.id)
 
-      // Save question answers
       if (jobQuestions.length > 0 && Object.keys(answers).length > 0) {
         const answersPayload = Object.entries(answers)
           .filter(([_, answer]) => answer.trim())
@@ -282,14 +272,12 @@ if (!applicantId) throw new Error('Could not create applicant account')
       })
       if (detailsError) throw detailsError
 
-      // Send password setup email
       try {
         await supabase.auth.resetPasswordForEmail(form.email, {
           redirectTo: `${window.location.origin}/reset-password`
         })
       } catch (e) {}
 
-      // Notify HR team of new application
       await notifyHRTeam({
         type: 'new_application',
         title: 'New Application Received',
@@ -347,55 +335,55 @@ if (!applicantId) throw new Error('Could not create applicant account')
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: 'clamp(1rem, 4vw, 2rem)' }}>
         {!showForm ? (
           <div className='job-detail-grid' style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '1.5rem', alignItems: 'start' }}>
-          <div>
-          <>
-            <div className="card" style={{ marginBottom: '1.25rem' }}>
-              <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '1rem' }}>{job.title}</h1>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><Briefcase size={15} />{job.department}</span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><MapPin size={15} />{job.location} · <span style={{ textTransform: 'capitalize' }}>{job.location_type}</span></span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><Clock size={15} /><span style={{ textTransform: 'capitalize' }}>{job.employment_type}</span></span>
-                {(job.salary_min || job.salary_max) && <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><DollarSign size={15} />{job.salary_min?.toLocaleString()} - {job.salary_max?.toLocaleString()}</span>}
-              </div>
-              <button className="btn-primary" onClick={() => setShowForm(true)} style={{ padding: '0.75rem 2rem', fontSize: '1rem' }}>Apply for This Position</button>
-            </div>
-            <div className="card" style={{ marginBottom: '1.25rem' }}>
-              <div className="job-description" dangerouslySetInnerHTML={{ __html: job.description }} />
-            </div>
-            {job.required_skills?.length > 0 && (
-              <div className="card">
-                <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem' }}>Required Skills</h2>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  {job.required_skills.map((s: string) => (
-                    <span key={s} style={{ background: 'rgba(37,99,235,0.15)', color: '#3b82f6', borderRadius: '8px', padding: '0.375rem 0.875rem', fontSize: '0.875rem', fontWeight: '500' }}>{s}</span>
-                  ))}
+            <div>
+              <>
+                <div className="card" style={{ marginBottom: '1.25rem' }}>
+                  <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '1rem' }}>{job.title}</h1>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><Briefcase size={15} />{job.department}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><MapPin size={15} />{job.location} · <span style={{ textTransform: 'capitalize' }}>{job.location_type}</span></span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><Clock size={15} /><span style={{ textTransform: 'capitalize' }}>{job.employment_type}</span></span>
+                    {(job.salary_min || job.salary_max) && <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><DollarSign size={15} />{job.salary_min?.toLocaleString()} - {job.salary_max?.toLocaleString()}</span>}
+                  </div>
+                  <button className="btn-primary" onClick={() => setShowForm(true)} style={{ padding: '0.75rem 2rem', fontSize: '1rem' }}>Apply for This Position</button>
                 </div>
-              </div>
-            )}
-          </>
-          </div>
-
-          {/* Sidebar - Other Jobs */}
-          <div className='job-detail-sidebar' style={{ position: 'sticky', top: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div className='card' style={{ padding: '1.25rem' }}>
-              <h3 style={{ fontWeight: '700', fontSize: '0.9375rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Other Opportunities</h3>
-              {otherJobs.length === 0 ? (
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>No other positions available</p>
-              ) : otherJobs.map((j: any) => (
-                <a key={j.id} href={`/jobs/${j.id}`}
-                  style={{ display: 'block', padding: '0.75rem', borderRadius: '8px', marginBottom: '0.5rem', background: 'var(--navy-700)', textDecoration: 'none', transition: 'background 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--navy-600)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'var(--navy-700)')}>
-                  <div style={{ fontWeight: '600', fontSize: '0.875rem', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>{j.title}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{j.department} · {j.location}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize', marginTop: '0.125rem' }}>{j.employment_type}</div>
-                </a>
-              ))}
-              <a href="/jobs" style={{ display: 'block', textAlign: 'center', marginTop: '0.5rem', fontSize: '0.8125rem', color: 'var(--blue-400)', textDecoration: 'none' }}>
-                View all positions →
-              </a>
+                <div className="card" style={{ marginBottom: '1.25rem' }}>
+                  <div className="job-description" dangerouslySetInnerHTML={{ __html: job.description }} />
+                </div>
+                {job.required_skills?.length > 0 && (
+                  <div className="card">
+                    <h2 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem' }}>Required Skills</h2>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                      {job.required_skills.map((s: string) => (
+                        <span key={s} style={{ background: 'rgba(37,99,235,0.15)', color: '#3b82f6', borderRadius: '8px', padding: '0.375rem 0.875rem', fontSize: '0.875rem', fontWeight: '500' }}>{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             </div>
-          </div>
+
+            {/* Sidebar - Other Jobs */}
+            <div className='job-detail-sidebar' style={{ position: 'sticky', top: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className='card' style={{ padding: '1.25rem' }}>
+                <h3 style={{ fontWeight: '700', fontSize: '0.9375rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>Other Opportunities</h3>
+                {otherJobs.length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>No other positions available</p>
+                ) : otherJobs.map((j: any) => (
+                  <a key={j.id} href={`/jobs/${j.id}`}
+                    style={{ display: 'block', padding: '0.75rem', borderRadius: '8px', marginBottom: '0.5rem', background: 'var(--navy-700)', textDecoration: 'none', transition: 'background 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--navy-600)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--navy-700)')}>
+                    <div style={{ fontWeight: '600', fontSize: '0.875rem', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>{j.title}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{j.department} · {j.location}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'capitalize', marginTop: '0.125rem' }}>{j.employment_type}</div>
+                  </a>
+                ))}
+                <a href="/jobs" style={{ display: 'block', textAlign: 'center', marginTop: '0.5rem', fontSize: '0.8125rem', color: 'var(--blue-400)', textDecoration: 'none' }}>
+                  View all positions →
+                </a>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="card">
@@ -404,7 +392,7 @@ if (!applicantId) throw new Error('Could not create applicant account')
               <button className="btn-secondary" onClick={() => setShowForm(false)}>← Back to Job</button>
             </div>
 
-            {/* Resume Upload - FIRST */}
+            {/* Resume Upload */}
             <div style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.5rem' }}>
               <h3 style={{ fontWeight: '600', marginBottom: '0.375rem', fontSize: '0.9375rem' }}>
                 📄 Upload Your Resume First
@@ -412,12 +400,10 @@ if (!applicantId) throw new Error('Could not create applicant account')
               <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginBottom: '1rem' }}>
                 Upload a PDF resume and we'll automatically fill in your details using AI. Save time — just review and submit!
               </p>
-
               <div style={{ border: '2px dashed var(--border)', borderRadius: '10px', padding: '1.25rem', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s', position: 'relative', background: 'var(--navy-800)' }}
                 onDragOver={e => e.preventDefault()}
                 onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleResumeUpload(f) }}>
                 <input type="file" accept=".pdf,.docx,.doc" style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleResumeUpload(f) }} />
-
                 {parsing ? (
                   <div>
                     <Loader size={28} color="var(--blue-400)" style={{ margin: '0 auto 0.5rem', display: 'block', animation: 'spin 1s linear infinite' }} />
@@ -444,7 +430,6 @@ if (!applicantId) throw new Error('Could not create applicant account')
                   </div>
                 )}
               </div>
-
               {parseError && (
                 <div style={{ marginTop: '0.75rem', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', padding: '0.625rem 0.875rem', fontSize: '0.8125rem', color: '#f59e0b' }}>
                   ⚠ {parseError}
@@ -545,7 +530,6 @@ if (!applicantId) throw new Error('Could not create applicant account')
                       {q.question}
                       {q.required && <span style={{ color: 'var(--danger)', marginLeft: '0.25rem' }}>*</span>}
                     </label>
-
                     {q.question_type === 'yes_no' && (
                       <div style={{ display: 'flex', gap: '0.75rem' }}>
                         {['Yes', 'No'].map(opt => (
@@ -556,22 +540,18 @@ if (!applicantId) throw new Error('Could not create applicant account')
                         ))}
                       </div>
                     )}
-
                     {q.question_type === 'text' && (
                       <input className="input" value={answers[q.id] || ''} onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))} placeholder="Your answer..." />
                     )}
-
                     {q.question_type === 'number' && (
                       <input className="input" type="number" min="0" value={answers[q.id] || ''} onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))} placeholder="Enter a number..." style={{ maxWidth: '200px' }} />
                     )}
-
-                    {(q.question_type === 'dropdown') && (
+                    {q.question_type === 'dropdown' && (
                       <select className="input" value={answers[q.id] || ''} onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}>
                         <option value="">— Select an option —</option>
                         {(q.options || []).map((opt: string) => <option key={opt} value={opt}>{opt}</option>)}
                       </select>
                     )}
-
                     {q.question_type === 'multiple_choice' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         {(q.options || []).map((opt: string) => (
