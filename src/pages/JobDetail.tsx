@@ -212,23 +212,27 @@ export default function JobDetail() {
       }
 
       // Check if applicant already exists by email
-      // Try to sign up — if email exists, Supabase returns user with empty identities
-      const { data: authData } = await supabase.auth.signUp({
-        email: form.email,
-        password: Math.random().toString(36).slice(-10) + 'A1!',
-        options: { data: { full_name: form.full_name, role: 'applicant' } }
-      })
+      // Check if applicant already exists
+      let applicantId: string | undefined
 
-      let applicantId = authData?.user?.id
+      const { data: existingProfiles } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('email', form.email)
+        .limit(1)
 
-      // If identities is empty, the email already exists — look up existing profile
-      if (!applicantId || (authData?.user?.identities && authData.user.identities.length === 0)) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id')
-          .eq('email', form.email)
-          .limit(1)
-        applicantId = profiles?.[0]?.user_id
+      if (existingProfiles && existingProfiles.length > 0) {
+        // Existing applicant — reuse their account
+        applicantId = existingProfiles[0].user_id
+      } else {
+        // New applicant — create account
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email: form.email,
+          password: Math.random().toString(36).slice(-10) + 'A1!',
+          options: { data: { full_name: form.full_name, role: 'applicant' } }
+        })
+        if (signUpError) throw new Error(signUpError.message)
+        applicantId = authData?.user?.id
       }
 
       if (!applicantId) throw new Error('Could not create applicant account')
