@@ -214,18 +214,26 @@ export default function JobDetail() {
         resumeUrl = publicUrl
       }
 
-      const { data: authData } = await supabase.auth.signUp({
-        email: form.email,
-        password: Math.random().toString(36).slice(-10) + 'A1!',
-        options: { data: { full_name: form.full_name, role: 'applicant' } }
-      })
+      // Check if applicant already exists
+const { data: existingProfile } = await supabase
+  .from('profiles')
+  .select('user_id')
+  .eq('email', form.email)
+  .single()
 
-      let applicantId = authData?.user?.id
-      if (!applicantId) {
-        const { data: existingProfile } = await supabase.from('profiles').select('user_id').eq('email', form.email).single()
-        applicantId = existingProfile?.user_id
-      }
-      if (!applicantId) throw new Error('Could not create applicant account')
+let applicantId = existingProfile?.user_id
+
+// Only create new account if doesn't exist
+if (!applicantId) {
+  const { data: authData } = await supabase.auth.signUp({
+    email: form.email,
+    password: Math.random().toString(36).slice(-10) + 'A1!',
+    options: { data: { full_name: form.full_name, role: 'applicant' } }
+  })
+  applicantId = authData?.user?.id
+}
+
+if (!applicantId) throw new Error('Could not create applicant account')
 
       await supabase.from('profiles').upsert({ user_id: applicantId, full_name: form.full_name, email: form.email, role: 'applicant' }, { onConflict: 'user_id' })
 
