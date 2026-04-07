@@ -212,24 +212,23 @@ export default function JobDetail() {
       }
 
       // Check if applicant already exists by email
-      const { data: existingDetails } = await supabase
-        .from('applicant_details')
-        .select('application_id, applications(applicant_id)')
-        .eq('email', form.email)
-        .limit(1)
+      // Try to sign up — if email exists, Supabase returns user with empty identities
+      const { data: authData } = await supabase.auth.signUp({
+        email: form.email,
+        password: Math.random().toString(36).slice(-10) + 'A1!',
+        options: { data: { full_name: form.full_name, role: 'applicant' } }
+      })
 
-      let applicantId = existingDetails?.[0]
-        ? (existingDetails[0].applications as any)?.applicant_id
-        : null
+      let applicantId = authData?.user?.id
 
-      // Only create new account if applicant doesn't exist
-      if (!applicantId) {
-        const { data: authData } = await supabase.auth.signUp({
-          email: form.email,
-          password: Math.random().toString(36).slice(-10) + 'A1!',
-          options: { data: { full_name: form.full_name, role: 'applicant' } }
-        })
-        applicantId = authData?.user?.id
+      // If identities is empty, the email already exists — look up existing profile
+      if (!applicantId || (authData?.user?.identities && authData.user.identities.length === 0)) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('email', form.email)
+          .limit(1)
+        applicantId = profiles?.[0]?.user_id
       }
 
       if (!applicantId) throw new Error('Could not create applicant account')
