@@ -231,7 +231,6 @@ textarea.input { resize: vertical; min-height: 100px; }
 .job-description ul { list-style-type: disc; }
 .job-description ol { list-style-type: decimal; }
 .job-description li { margin-bottom: 0.125rem; line-height: 1.4; }
-.job-description li p { margin: 0 !important; line-height: 1.5 !important; }
 .job-description strong { color: var(--text-primary); font-weight: 600; }
 .job-description blockquote { border-left: 3px solid var(--blue-500); padding-left: 1rem; color: var(--text-muted); margin: 0.75rem 0; }
 
@@ -333,23 +332,12 @@ body.applicant-page {
     margin-left: 0 !important;
   }
 }
+
+/* ── Applicant Portal Header ── */
+.portal-browse-mobile { display: none !important; }
+.portal-browse-desktop { display: inline-flex !important; }
+
 @media (max-width: 640px) {
-  .settings-tabs {
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    scrollbar-width: none !important;
-  }
-  .settings-tabs::-webkit-scrollbar {
-    display: none !important;
-  }
-  .settings-tabs button {
-    flex-shrink: 0 !important;
-    padding: 0.5rem 0.875rem !important;
-    font-size: 0.8125rem !important;
-  }
-}
-.welcome-short { display: none; }
-@media (max-width: 640px) {
-  .welcome-full { display: none; }
-  .welcome-short { display: inline; }
+  .portal-browse-mobile { display: flex !important; }
+  .portal-browse-desktop { display: none !important; }
 }
