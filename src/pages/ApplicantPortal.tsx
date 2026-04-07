@@ -270,15 +270,6 @@ export default function ApplicantPortal() {
               </div>
             ))}
           </div>
-
-          {/* Quick Actions */}
-          <div className="card" style={{ padding: '1.25rem' }}>
-            <h3 style={{ fontWeight: '600', fontSize: '0.9375rem', marginBottom: '1rem' }}>Quick Actions</h3>
-            <button className="btn-secondary" onClick={() => navigate('/jobs')} style={{ width: '100%', justifyContent: 'center', fontSize: '0.8125rem' }}>
-              <Briefcase size={14} /> Browse More Jobs
-            </button>
-          </div>
-
         </div>
       </div>
     </div>
