@@ -341,3 +341,8 @@ body.applicant-page {
   .portal-browse-mobile { display: flex !important; }
   .portal-browse-desktop { display: none !important; }
 }
+.welcome-short { display: none; }
+@media (max-width: 640px) {
+  .welcome-full { display: none !important; }
+  .welcome-short { display: inline !important; }
+}
