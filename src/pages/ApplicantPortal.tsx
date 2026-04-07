@@ -70,7 +70,7 @@ export default function ApplicantPortal() {
       <div style={{ background: 'var(--navy-900)', borderBottom: '1px solid var(--border)', padding: '0.875rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {settings?.company_logo ? (
-            <img src={settings.company_logo} alt={settings.company_name} style={{ maxHeight: '40px', maxWidth: '160px', objectFit: 'contain' }} />
+            <img src="https://ljgjgaojkihpaykfewpa.supabase.co/storage/v1/object/public/avatars/Logo%20Text%20and%20Slogan%20to%20left.png" alt={settings.company_name} style={{ maxHeight: '40px', maxWidth: '160px', objectFit: 'contain' }} />
           ) : (
             <>
               <div style={{ width: '36px', height: '36px', background: 'var(--blue-500)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -81,9 +81,8 @@ export default function ApplicantPortal() {
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            Welcome, {profile?.full_name}
-          </span>
+          <span className="welcome-full">Welcome, {profile?.full_name}</span>
+          <span className="welcome-short">Hi, {profile?.full_name?.split(' ')[0]}!</span>
           <button className="btn-secondary" onClick={() => navigate('/jobs')} style={{ fontSize: '0.8125rem' }}>Browse Jobs</button>
           <button className="btn-secondary" onClick={handleSignOut} style={{ fontSize: '0.8125rem', padding: '0.5rem' }} title="Sign Out"><LogOut size={14} /></button>
         </div>
