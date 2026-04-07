@@ -212,14 +212,15 @@ export default function JobDetail() {
       }
 
       // Check if applicant already exists by email
-      const { data: existingDetail } = await supabase
+      const { data: existingDetails } = await supabase
         .from('applicant_details')
         .select('application_id, applications(applicant_id)')
         .eq('email', form.email)
         .limit(1)
-        .single()
 
-      let applicantId = (existingDetail?.applications as any)?.applicant_id
+      let applicantId = existingDetails?.[0]
+        ? (existingDetails[0].applications as any)?.applicant_id
+        : null
 
       // Only create new account if applicant doesn't exist
       if (!applicantId) {
