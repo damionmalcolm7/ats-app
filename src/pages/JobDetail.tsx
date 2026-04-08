@@ -282,11 +282,25 @@ if (existingProfiles && existingProfiles.length === 0) {
       })
       if (detailsError) throw detailsError
 
-    // Only send password setup email for new applicants
 if (existingProfiles && existingProfiles.length === 0) {
+  // New applicant — send portal setup email
   try {
     await supabase.auth.resetPasswordForEmail(form.email, {
       redirectTo: `${window.location.origin}/reset-password`
+    })
+  } catch (e) {}
+} else {
+  // Existing applicant — send application confirmation email
+  try {
+    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({
+        to: form.email,
+        subject: `Application Received — ${job?.title} at ${settings?.company_name || 'National Housing Trust'}`,
+        body: `Dear ${form.full_name},\n\nThank you for applying for the ${job?.title} position at ${settings?.company_name || 'National Housing Trust'}. Your application has been received and is currently under review.\n\nYou can log into your applicant portal to track your application status at any time.\n\nPortal: ${window.location.origin}/portal\n\nBest regards,\n${settings?.sender_name || 'HR Team'}`,
+        application_id: appData.id
+      })
     })
   } catch (e) {}
 }
