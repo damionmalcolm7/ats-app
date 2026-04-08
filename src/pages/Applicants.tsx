@@ -178,13 +178,16 @@ export default function Applicants() {
       queryClient.invalidateQueries({ queryKey: ['applications'] })
       toast.success(`${selected.length} application${selected.length !== 1 ? 's' : ''} deleted`)
       if (profile) {
-        createAuditLog({
-          user_id: profile.user_id,
-          user_name: profile.full_name || 'Unknown',
-          user_role: profile.role || 'unknown',
-          action: 'DELETE_APPLICATIONS',
-          details: { count: selected.length, application_ids: selected.map(a => a.id) }
-        })
+      createAuditLog({
+  user_id: profile.user_id,
+  user_name: profile.full_name || 'Unknown',
+  user_role: profile.role || 'unknown',
+  action: 'DELETE_APPLICATIONS',
+  details: { 
+    count: selected.length,
+    candidates: selected.map(a => `${a.applicant_details?.full_name || 'Unknown'} — ${a.job?.title || 'Unknown'}`)
+  }
+})
       }
       setSelectedIds([])
       setShowBulkActions(false)
