@@ -370,8 +370,10 @@ export default function ApplicantProfile() {
               </div>
               {interviews.length === 0 ? (
                 <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>No interviews scheduled</p>
-              ) : interviews.map((iv: any) => (
-                <div key={iv.id} style={{ padding: '0.875rem', background: 'var(--navy-700)', borderRadius: '8px', marginBottom: '0.75rem' }}>
+              ) : interviews.map((iv: any) => {
+                const isPast = new Date(iv.scheduled_at) < new Date() && iv.status === 'scheduled'
+                return (
+                <div key={iv.id} style={{ padding: '0.875rem', background: isPast ? 'var(--navy-800)' : 'var(--navy-700)', borderRadius: '8px', marginBottom: '0.75rem', opacity: isPast ? 0.7 : 1, border: isPast ? '1px solid var(--border)' : 'none' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontWeight: '500', textTransform: 'capitalize' }}>{iv.format} Interview</div>
@@ -382,10 +384,10 @@ export default function ApplicantProfile() {
                       {iv.notes && <div style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginTop: '0.25rem' }}>{iv.notes}</div>}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                      <span className={`badge ${iv.status === 'scheduled' ? 'badge-blue' : iv.status === 'completed' ? 'badge-green' : 'badge-red'}`} style={{ textTransform: 'capitalize' }}>
-                        {iv.status}
+                      <span className={`badge ${isPast ? 'badge-yellow' : iv.status === 'scheduled' ? 'badge-blue' : iv.status === 'completed' ? 'badge-green' : 'badge-red'}`} style={{ textTransform: 'capitalize' }}>
+                        {isPast ? 'Past' : iv.status}
                       </span>
-                      {iv.status === 'scheduled' && (
+                      {iv.status === 'scheduled' && !isPast && (
                         <div style={{ display: 'flex', gap: '0.375rem' }}>
                           <button
                             onClick={() => { setRescheduleInterview(iv); setShowInterview(true) }}
