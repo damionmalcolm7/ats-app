@@ -280,11 +280,14 @@ if (existingProfiles && existingProfiles.length === 0) {
       })
       if (detailsError) throw detailsError
 
-      try {
-        await supabase.auth.resetPasswordForEmail(form.email, {
-          redirectTo: `${window.location.origin}/reset-password`
-        })
-      } catch (e) {}
+    // Only send password setup email for new applicants
+if (existingProfiles && existingProfiles.length === 0) {
+  try {
+    await supabase.auth.resetPasswordForEmail(form.email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    })
+  } catch (e) {}
+}
 
       await notifyHRTeam({
         type: 'new_application',
