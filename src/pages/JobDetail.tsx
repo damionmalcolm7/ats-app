@@ -106,6 +106,7 @@ export default function JobDetail() {
   const [parsing, setParsing] = useState(false)
   const [parsed, setParsed] = useState(false)
   const [parseError, setParseError] = useState('')
+  const [isNewApplicant, setIsNewApplicant] = useState(true)
 
   const { data: job, isLoading } = useQuery({
     queryKey: ['job', id],
@@ -222,9 +223,10 @@ export default function JobDetail() {
         .limit(1)
 
       if (existingProfiles && existingProfiles.length > 0) {
-        // Existing applicant — reuse their account
-        applicantId = existingProfiles[0].user_id
-      } else {
+  // Existing applicant — reuse their account
+  applicantId = existingProfiles[0].user_id
+  setIsNewApplicant(false)
+} else {
         // New applicant — create account
         const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email: form.email,
@@ -324,8 +326,11 @@ if (existingProfiles && existingProfiles.length === 0) {
             Next Steps
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.7, margin: 0 }}>
-            A confirmation has been sent to <strong style={{ color: 'var(--text-primary)' }}>{form.email}</strong>. Please check your inbox for a link to set up your applicant portal where you can track your application status and respond to any document requests.
-          </p>
+  {isNewApplicant
+    ? <>A confirmation has been sent to <strong style={{ color: 'var(--text-primary)' }}>{form.email}</strong>. Please check your inbox for a link to set up your applicant portal where you can track your application status.</>
+    : <>Your application has been received. Log into your <strong style={{ color: 'var(--text-primary)' }}>applicant portal</strong> to track your application status.</>
+  }
+</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
           <button className="btn-secondary" onClick={() => navigate('/jobs')}>View More Jobs</button>
