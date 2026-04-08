@@ -429,7 +429,8 @@ export default function ApplicantProfile() {
                     <InterviewFeedback interviewId={iv.id} applicationId={id!} />
                   </div>
                 </div>
-              ))}
+              )
+              })}
             </div>
           )}
 
