@@ -375,7 +375,13 @@ if (existingProfiles && existingProfiles.length === 0) {
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><Clock size={15} /><span style={{ textTransform: 'capitalize' }}>{job.employment_type}</span></span>
                     {(job.salary_min || job.salary_max) && <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><DollarSign size={15} />{job.salary_min?.toLocaleString()} - {job.salary_max?.toLocaleString()}</span>}
                   </div>
-                  <button className="btn-primary" onClick={() => setShowForm(true)} style={{ padding: '0.75rem 2rem', fontSize: '1rem' }}>Apply for This Position</button>
+                  {job.deadline && new Date(job.deadline) < new Date() ? (
+  <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '0.75rem 1.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', fontSize: '0.9375rem', fontWeight: '500' }}>
+    ⏰ Applications closed — deadline was {new Date(job.deadline).toLocaleDateString()}
+  </div>
+) : (
+  <button className="btn-primary" onClick={() => setShowForm(true)} style={{ padding: '0.75rem 2rem', fontSize: '1rem' }}>Apply for This Position</button>
+)}
                 </div>
                 <div className="card" style={{ marginBottom: '1.25rem' }}>
                   <div className="job-description" dangerouslySetInnerHTML={{ __html: job.description }} />
