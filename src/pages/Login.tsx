@@ -77,14 +77,10 @@ export default function Login() {
     }
   }
 
-  const logoSection = (
-    <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-      {settings?.company_logo ? (
+ const logoSection = (
+    <div style={{ textAlign: 'center', marginBottom: '2rem', minHeight: '80px' }}>
+      {settings?.company_logo && (
         <img src={theme === 'light' ? LIGHT_LOGO : settings.company_logo} alt={settings.company_name || 'Company'} style={{ maxHeight: '70px', maxWidth: '220px', objectFit: 'contain', margin: '0 auto 1rem', display: 'block' }} />
-      ) : (
-        <div style={{ width: '56px', height: '56px', background: 'var(--blue-500)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
-          <Briefcase size={28} color="white" />
-        </div>
       )}
     </div>
   )
