@@ -70,6 +70,7 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
         ...form,
         salary_min: form.salary_min ? Number(form.salary_min) : null,
         salary_max: form.salary_max ? Number(form.salary_max) : null,
+        status: form.deadline && new Date(form.deadline) > new Date() && form.status === 'closed' ? 'active' : form.status,
         deadline: form.deadline ? `${form.deadline}T12:00:00.000Z` : null,
         created_by: profile?.user_id,
         updated_at: new Date().toISOString()
