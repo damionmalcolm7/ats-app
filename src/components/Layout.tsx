@@ -148,7 +148,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 </div>
                 <div style={{ textAlign: 'left' }}>
                   <div style={{ fontSize: '0.8125rem', fontWeight: '500' }}>{profile?.full_name || 'User'}</div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{profile?.role?.replace('_', ' ')}</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{profile?.role === 'super_admin' ? 'Administrator' : 'HR Staff'}</div>
                 </div>
                 <ChevronDown size={14} color="var(--text-muted)" />
               </button>
