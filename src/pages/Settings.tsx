@@ -123,7 +123,7 @@ export default function Settings() {
         .select().single()
       if (error) throw error
       const inviteUrl = `${window.location.origin}/invite/${invite.token}`
-      const roleLabel = inviteRole === 'super_admin' ? 'Super Admin' : 'HR Staff'
+      const roleLabel = inviteRole === 'super_admin' ? 'Administrator' : 'HR Staff'
       await sendEmail({
         to: inviteEmail.trim(),
         subject: `You've been invited to join ${settings?.company_name || 'Our Company'} ATS`,
@@ -153,7 +153,7 @@ export default function Settings() {
   const resendInvite = useMutation({
     mutationFn: async (invite: any) => {
       const inviteUrl = `${window.location.origin}/invite/${invite.token}`
-      const roleLabel = invite.role === 'super_admin' ? 'Super Admin' : 'HR Staff'
+      const roleLabel = invite.role === 'super_admin' ? 'Administrator' : 'HR Staff'
       await sendEmail({
         to: invite.email,
         subject: `Reminder: You've been invited to join ${settings?.company_name || 'Our Company'} ATS`,
@@ -356,7 +356,7 @@ export default function Settings() {
                 <label className="label">Role</label>
                 <select className="input" value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
                   <option value="hr">HR Staff</option>
-                  <option value="super_admin">Super Admin</option>
+                  <option value="super_admin">Administrator</option>
                 </select>
               </div>
               <button className="btn-primary" onClick={() => sendInvite.mutate()} disabled={sendInvite.isPending || !inviteEmail.trim()} style={{ marginBottom: '0.125rem' }}>
@@ -422,7 +422,7 @@ export default function Settings() {
                         onChange={e => { if (confirm(`Change ${user.full_name}'s role to ${e.target.value}?`)) changeRole.mutate({ userId: user.user_id, role: e.target.value }) }}
                         className="input" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem', width: 'auto' }}>
                         <option value="hr">HR Staff</option>
-                        <option value="super_admin">Super Admin</option>
+                        <option value="super_admin">Administrator</option>
                       </select>
                       <button onClick={() => { setEditingUser(user); setEditForm({ full_name: user.full_name || '', job_title: user.job_title || '' }) }}
                         className="btn-secondary" style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
@@ -469,7 +469,7 @@ export default function Settings() {
             <label className="label">System Role</label>
             <input className="input" value={profile?.role?.replace('_', ' ') || ''} disabled style={{ opacity: 0.6, textTransform: 'capitalize' }} />
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-              Your system access level — contact your Super Admin to change this
+              Your system access level — contact your Administrator to change this
             </div>
           </div>
           <button className="btn-primary" onClick={() => saveProfile.mutate()} disabled={saveProfile.isPending}>
