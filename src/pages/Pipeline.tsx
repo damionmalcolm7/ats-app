@@ -25,7 +25,7 @@ export default function Pipeline() {
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dragOverStage, setDragOverStage] = useState<string | null>(null)
   const [jobFilter, setJobFilter] = useState('all')
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 900)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 900)
   const [expandedStages, setExpandedStages] = useState<Record<string, boolean>>({
     applied: true, screening: true, interview: true, assessment: true,
     offer: true, hired: true, rejected: false
