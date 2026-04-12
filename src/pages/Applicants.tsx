@@ -579,15 +579,15 @@ export default function Applicants() {
                     <input type="checkbox" checked={allSelected} onChange={toggleSelectAll}
                       style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: 'var(--blue-500)' }} />
                   </th>
-                  <th>Applicant</th>
-                  <th>Applied For</th>
-                  <th>Skills</th>
-                  <th>Experience</th>
-                  <th>Match Score</th>
-                  <th>Stage</th>
-                  <th>Source</th>
-                  <th>Applied</th>
-                  <th>Actions</th>
+                  <th>style={{ whiteSpace: 'nowrap' }}>Applicant</th>
+                  <th>style={{ whiteSpace: 'nowrap' }}>Applied For</th>
+                  <th>style={{ whiteSpace: 'nowrap' }}>Skills</th>
+                  <th>style={{ whiteSpace: 'nowrap' }}>Experience</th>
+                  <th></th>style={{ whiteSpace: 'nowrap' }}>Match Score</th>
+                  <th>style={{ whiteSpace: 'nowrap' }}>Stage</th>
+                  <th>style={{ whiteSpace: 'nowrap' }}>Source</th>
+                  <th>style={{ whiteSpace: 'nowrap' }}>Applied</th>
+                  <th>style={{ whiteSpace: 'nowrap' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
