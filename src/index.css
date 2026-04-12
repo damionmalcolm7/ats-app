@@ -267,11 +267,15 @@ textarea.input { resize: vertical; min-height: 100px; }
   }
 }
 
-/* HR Dashboard tables - horizontal scroll on mobile */
+/* HR Dashboard tables - horizontal scroll */
+.table-container {
+  overflow-x: auto;
+}
+.table-container table {
+  min-width: 900px;
+}
+
 @media (max-width: 900px) {
-  .table-container {
-    overflow-x: auto !important;
-  }
   .table-container table {
     min-width: 700px;
   }
