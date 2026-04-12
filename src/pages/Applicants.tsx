@@ -583,7 +583,7 @@ export default function Applicants() {
                   <th>style={{ whiteSpace: 'nowrap' }}>Applied For</th>
                   <th>style={{ whiteSpace: 'nowrap' }}>Skills</th>
                   <th>style={{ whiteSpace: 'nowrap' }}>Experience</th>
-                  <th></th>style={{ whiteSpace: 'nowrap' }}>Match Score</th>
+                  <th>style={{ whiteSpace: 'nowrap' }}>Match Score</th>
                   <th>style={{ whiteSpace: 'nowrap' }}>Stage</th>
                   <th>style={{ whiteSpace: 'nowrap' }}>Source</th>
                   <th>style={{ whiteSpace: 'nowrap' }}>Applied</th>
