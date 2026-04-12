@@ -534,7 +534,7 @@ export default function Settings() {
                         <td style={{ fontWeight: '500', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>{log.user_name}</td>
                         <td style={{ whiteSpace: 'nowrap' }}>
                           <span className={`badge ${log.user_role === 'super_admin' ? 'badge-purple' : 'badge-blue'}`} style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
-                            {log.user_role === 'super_admin' ? 'Super Admin' : 'HR Staff'}
+                            {log.user_role === 'super_admin' ? 'Administrator' : 'HR Staff'}
                           </span>
                         </td>
                         <td>
