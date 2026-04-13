@@ -24,6 +24,49 @@ const navItems = [
   { icon: Globe, label: 'Job Board', path: '/jobs' },
 ]
 
+function NextInterview() {
+  const { data: next } = useQuery({
+    queryKey: ['next-interview'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('interviews')
+        .select('*, applications(applicant_details(full_name), job:jobs(title))')
+        .eq('status', 'scheduled')
+        .gte('scheduled_at', new Date().toISOString())
+        .order('scheduled_at', { ascending: true })
+        .limit(1)
+        .single()
+      return data
+    }
+  })
+
+  if (!next) return (
+    <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', padding: '0 0.5rem' }}>No upcoming interviews</div>
+  )
+
+  const details = Array.isArray(next.applications?.applicant_details)
+    ? next.applications.applicant_details[0]
+    : next.applications?.applicant_details
+
+  const date = new Date(next.scheduled_at)
+  const isToday = date.toDateString() === new Date().toDateString()
+  const isTomorrow = date.toDateString() === new Date(Date.now() + 86400000).toDateString()
+  const dayLabel = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : date.toLocaleDateString('en-JM', { weekday: 'short', month: 'short', day: 'numeric' })
+  const time = date.toLocaleTimeString('en-JM', { hour: '2-digit', minute: '2-digit' })
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--navy-800)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.375rem 0.875rem' }}>
+      <Calendar size={14} color="var(--blue-400)" />
+      <div>
+        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1 }}>Next Interview</div>
+        <div style={{ fontSize: '0.8125rem', fontWeight: '500', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+          {details?.full_name} · {dayLabel} at {time}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Layout({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth()
   const { theme, toggleTheme } = useTheme()
@@ -123,8 +166,10 @@ export default function Layout({ children }: { children: ReactNode }) {
             className="mobile-menu-btn">
             <Menu size={22} />
           </button>
-          <div style={{ flex: 1, maxWidth: '400px' }} className="search-bar-desktop">
-            <input className="input" placeholder="Search jobs, applicants..." style={{ background: 'var(--navy-800)', height: '36px', fontSize: '0.8125rem' }} />
+
+          {/* Next Interview */}
+          <div className="search-bar-desktop">
+            <NextInterview />
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
