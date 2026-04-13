@@ -202,11 +202,6 @@ export default function Login() {
               {loading ? <span className="spinner" /> : 'Sign In'}
             </button>
           </form>
-
-          <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            Don't have an account?{' '}
-            <Link to="/signup" style={{ color: 'var(--blue-400)', textDecoration: 'none' }}>Sign up</Link>
-          </p>
           <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
             Looking for jobs?{' '}
             <Link to="/jobs" style={{ color: 'var(--blue-400)', textDecoration: 'none' }}>View job board</Link>
