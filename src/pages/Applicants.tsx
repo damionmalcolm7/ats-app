@@ -202,7 +202,7 @@ export default function Applicants() {
   async function handleAutoShortlist() {
     const eligible = filtered.filter(a => a.status === 'applied' && a.match_score != null && a.match_score >= shortlistThreshold)
     if (eligible.length === 0) { toast.error(`No applicants with ${shortlistThreshold}%+ match score in "Applied" status`); return }
-    if (!confirm(`Move ${eligible.length} applicant${eligible.length !== 1 ? 's' : ''} with ${shortlistThreshold}%+ match to Screening?`)) return
+    if (!confirm(`Move ${eligible.length} applicant${eligible.length !== 1 ? 's' : ''} with ${shortlistThreshold}%+ match to Shortlisted?`)) return
     setBulkProcessing(true)
     let success = 0
     try {
@@ -214,7 +214,7 @@ export default function Applicants() {
         success++
       }
       queryClient.invalidateQueries({ queryKey: ['applications'] })
-      toast.success(`✅ ${success} applicant${success !== 1 ? 's' : ''} moved to Screening!`)
+      toast.success(`✅ ${success} applicant${success !== 1 ? 's' : ''} moved to Shortlisted!`)
     } catch (err: any) {
       toast.error(err.message)
     } finally {
