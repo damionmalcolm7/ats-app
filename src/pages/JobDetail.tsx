@@ -253,11 +253,36 @@ if (existingProfiles && existingProfiles.length === 0) {
       }).select().single()
       if (appError) throw appError
 
-      const jobSkills = job?.required_skills || []
-      const applicantSkills = form.skills.map((s: string) => s.toLowerCase())
-      const matchScore = jobSkills.length > 0
-        ? Math.round((jobSkills.filter((s: string) => applicantSkills.includes(s.toLowerCase())).length / jobSkills.length) * 100)
-        : 0
+     // Match score based on experience, education and certifications
+      let scorePoints = 0
+      let totalPoints = 0
+
+      // 1. Years of experience vs job requirement (50 points)
+      const jobExpLevel = job?.experience_level || ''
+      const requiredYears = jobExpLevel === 'entry' ? 1 : jobExpLevel === 'mid' ? 3 : jobExpLevel === 'senior' ? 5 : jobExpLevel === 'lead' ? 7 : 0
+      const applicantYears = Number(form.years_experience) || 0
+      if (requiredYears > 0) {
+        totalPoints += 50
+        if (applicantYears >= requiredYears) scorePoints += 50
+        else if (applicantYears > 0) scorePoints += Math.round((applicantYears / requiredYears) * 50)
+      }
+
+      // 2. Education / qualifications (30 points)
+      const hasEducation = education.filter(e => e.degree).length > 0
+      totalPoints += 30
+      if (hasEducation) scorePoints += 30
+
+      // 3. Certifications detected in work history or education (20 points)
+      const certKeywords = ['certif', 'diploma', 'license', 'accredit', 'professional', 'chartered', 'associate', 'fellow']
+      const allText = [
+        ...education.map(e => `${e.degree} ${e.institution}`),
+        ...workHistory.map(w => `${w.title} ${w.company}`)
+      ].join(' ').toLowerCase()
+      const hasCerts = certKeywords.some(kw => allText.includes(kw))
+      totalPoints += 20
+      if (hasCerts) scorePoints += 20
+
+      const matchScore = totalPoints > 0 ? Math.round((scorePoints / totalPoints) * 100) : 0
 
       await supabase.from('applications').update({ match_score: matchScore }).eq('id', appData.id)
 
