@@ -58,7 +58,7 @@ export default function ApplicantPortal() {
     .sort((a: any, b: any) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime())
 
   const STAGES = ['applied', 'screening', 'interview', 'assessment', 'offer', 'hired']
-  const STAGE_LABELS = ['Applied', 'Screening', 'Interview', 'Assessment', 'Offer', 'Hired']
+  const STAGE_LABELS = ['Applied', 'Shortlisted', 'Interview', 'Assessment', 'Offer', 'Hired']
 
   async function handleSignOut() {
     await signOut()
