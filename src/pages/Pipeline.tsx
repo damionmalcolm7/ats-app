@@ -10,7 +10,7 @@ import { Eye, ChevronDown, ChevronUp } from 'lucide-react'
 
 const STAGES = [
   { id: 'applied',    label: 'Applied',    color: '#2563eb', bg: 'rgba(37,99,235,0.08)',   border: 'rgba(37,99,235,0.2)' },
-  { id: 'screening',  label: 'Screening',  color: '#f59e0b', bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.2)' },
+  { id: 'screening',  label: 'Shortlisted',  color: '#f59e0b', bg: 'rgba(245,158,11,0.08)',  border: 'rgba(245,158,11,0.2)' },
   { id: 'interview',  label: 'Interview',  color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)',  border: 'rgba(139,92,246,0.2)' },
   { id: 'assessment', label: 'Assessment', color: '#06b6d4', bg: 'rgba(6,182,212,0.08)',   border: 'rgba(6,182,212,0.2)' },
   { id: 'offer',      label: 'Offer',      color: '#10b981', bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.2)' },
