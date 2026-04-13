@@ -53,7 +53,7 @@ export default function Analytics() {
       ])
       const applications = apps.data || []
       const allJobs = jobs.data || []
-      const stages = ['applied', 'shortlisted', 'interview', 'assessment', 'offer', 'hired', 'rejected']
+      const stages = ['applied', 'screening', 'interview', 'assessment', 'offer', 'hired', 'rejected']
       const funnelData = stages.map(s => ({ stage: s === 'screening' ? 'Shortlisted' : s.charAt(0).toUpperCase() + s.slice(1), count: applications.filter(a => a.status === s).length }))
       const deptMap: Record<string, number> = {}
       allJobs.forEach(j => { deptMap[j.department] = (deptMap[j.department] || 0) + 1 })
