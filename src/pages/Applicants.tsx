@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { createAuditLog } from '../lib/audit'
 import { sendStatusEmail } from '../lib/email'
 import toast from 'react-hot-toast'
-import { Search, Eye, Zap, ThumbsUp, ThumbsDown, Filter, Mail, ChevronDown, Trash2, SlidersHorizontal, X as XIcon } from 'lucide-react'
+import { Search, Eye, Zap, ThumbsUp, ThumbsDown, Filter, Mail, ChevronDown, Trash2, SlidersHorizontal, X as XIcon, RefreshCw } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -35,6 +35,7 @@ export default function Applicants() {
   const [shortlistThreshold, setShortlistThreshold] = useState(70)
   const [rejectThreshold, setRejectThreshold] = useState(40)
   const [bulkProcessing, setBulkProcessing] = useState(false)
+  const [recalculating, setRecalculating] = useState(false)
 
   // Bulk action states
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -50,7 +51,7 @@ export default function Applicants() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('applications')
-        .select('*, job:jobs(title, department, experience_level, required_skills)')
+        .select('*, job:jobs(title, department, experience_level, required_skills, required_education)')
         .order('created_at', { ascending: false })
       if (error) throw error
       const enriched = await Promise.all((data || []).map(async (app) => {
@@ -104,6 +105,70 @@ export default function Applicants() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['applications'] }); toast.success('Status updated') },
     onError: (err: any) => toast.error(err.message)
   })
+
+  // Recalculate all match scores
+  async function handleRecalculateScores() {
+    if (!confirm(`Recalculate match scores for all ${applications.length} application${applications.length !== 1 ? 's' : ''}? This may take a moment.`)) return
+    setRecalculating(true)
+    let success = 0
+    try {
+      for (const app of applications) {
+        const details = app.applicant_details
+        const job = app.job
+        if (!details || !job) continue
+
+        let scorePoints = 0
+        let totalPoints = 0
+
+        // 1. Years of experience (50 points)
+        const jobExpLevel = job.experience_level || ''
+        const requiredYears = jobExpLevel === 'entry' ? 1 : jobExpLevel === 'mid' ? 3 : jobExpLevel === 'senior' ? 5 : jobExpLevel === 'lead' ? 7 : 0
+        const applicantYears = Number(details.years_experience) || 0
+        if (requiredYears > 0) {
+          totalPoints += 50
+          if (applicantYears >= requiredYears) scorePoints += 50
+          else if (applicantYears > 0) scorePoints += Math.round((applicantYears / requiredYears) * 50)
+        }
+
+        // 2. Education level (30 points)
+        const eduRank: Record<string, number> = { none: 0, high_school: 1, associate: 2, bachelor: 3, master: 4, phd: 5 }
+        const requiredEdu = job.required_education || 'none'
+        const requiredEduRank = eduRank[requiredEdu] || 0
+        if (requiredEduRank > 0) {
+          totalPoints += 30
+          const degreeText = (details.education || []).filter((e: any) => e.degree).map((e: any) => e.degree.toLowerCase()).join(' ')
+          const applicantEduRank = degreeText.includes('phd') || degreeText.includes('doctor') ? 5
+            : degreeText.includes('master') || degreeText.includes('msc') || degreeText.includes('mba') ? 4
+            : degreeText.includes('bachelor') || degreeText.includes('bsc') || degreeText.includes('ba ') || degreeText.includes('b.sc') || degreeText.includes('b.a') ? 3
+            : degreeText.includes('associate') ? 2
+            : degreeText.includes('diploma') || degreeText.includes('csec') || degreeText.includes('high school') ? 1
+            : 0
+          if (applicantEduRank >= requiredEduRank) scorePoints += 30
+          else if (applicantEduRank > 0) scorePoints += Math.round((applicantEduRank / requiredEduRank) * 30)
+        }
+
+        // 3. Certifications (20 points)
+        const certKeywords = ['certif', 'license', 'accredit', 'professional', 'chartered', 'fellow']
+        const allText = [
+          ...(details.education || []).map((e: any) => `${e.degree} ${e.institution}`),
+          ...(details.work_history || []).map((w: any) => `${w.title} ${w.company}`)
+        ].join(' ').toLowerCase()
+        const hasCerts = certKeywords.some((kw: string) => allText.includes(kw))
+        totalPoints += 20
+        if (hasCerts) scorePoints += 20
+
+        const matchScore = totalPoints > 0 ? Math.round((scorePoints / totalPoints) * 100) : 0
+        await supabase.from('applications').update({ match_score: matchScore }).eq('id', app.id)
+        success++
+      }
+      queryClient.invalidateQueries({ queryKey: ['applications'] })
+      toast.success(`✅ Recalculated scores for ${success} application${success !== 1 ? 's' : ''}!`)
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setRecalculating(false)
+    }
+  }
 
   // Bulk status change
   async function handleBulkStatusChange(newStatus: string) {
@@ -178,16 +243,16 @@ export default function Applicants() {
       queryClient.invalidateQueries({ queryKey: ['applications'] })
       toast.success(`${selected.length} application${selected.length !== 1 ? 's' : ''} deleted`)
       if (profile) {
-      createAuditLog({
-  user_id: profile.user_id,
-  user_name: profile.full_name || 'Unknown',
-  user_role: profile.role || 'unknown',
-  action: 'DELETE_APPLICATIONS',
-  details: { 
-    count: selected.length,
-    candidates: selected.map(a => `${a.applicant_details?.full_name || 'Unknown'} — ${a.job?.title || 'Unknown'}`)
-  }
-})
+        createAuditLog({
+          user_id: profile.user_id,
+          user_name: profile.full_name || 'Unknown',
+          user_role: profile.role || 'unknown',
+          action: 'DELETE_APPLICATIONS',
+          details: {
+            count: selected.length,
+            candidates: selected.map(a => `${a.applicant_details?.full_name || 'Unknown'} — ${a.job?.title || 'Unknown'}`)
+          }
+        })
       }
       setSelectedIds([])
       setShowBulkActions(false)
@@ -312,10 +377,17 @@ export default function Applicants() {
             {applications.length} total · {filtered.length} showing {selectedIds.length > 0 && `· ${selectedIds.length} selected`}
           </p>
         </div>
-        <button className="btn-primary" onClick={() => setShowScreening(!showScreening)}
-          style={{ background: showScreening ? 'var(--navy-700)' : 'var(--blue-500)', border: showScreening ? '1px solid var(--border)' : 'none' }}>
-          <Zap size={15} /> Smart Screening
-        </button>
+        <div style={{ display: 'flex', gap: '0.625rem' }}>
+          <button className="btn-secondary" onClick={handleRecalculateScores} disabled={recalculating || applications.length === 0}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.875rem' }}>
+            <RefreshCw size={14} style={{ animation: recalculating ? 'spin 1s linear infinite' : 'none' }} />
+            {recalculating ? 'Recalculating...' : 'Recalculate Scores'}
+          </button>
+          <button className="btn-primary" onClick={() => setShowScreening(!showScreening)}
+            style={{ background: showScreening ? 'var(--navy-700)' : 'var(--blue-500)', border: showScreening ? '1px solid var(--border)' : 'none' }}>
+            <Zap size={15} /> Smart Screening
+          </button>
+        </div>
       </div>
 
       {/* Smart Screening Panel */}
@@ -336,7 +408,7 @@ export default function Applicants() {
               <div style={{ fontSize: '0.8125rem', color: '#f59e0b', fontWeight: '500' }}>Medium Match</div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{rejectThreshold}% - {shortlistThreshold - 1}%</div>
             </div>
-            <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '10px', padding: '1rem', textAlign: 'center' }}>
+            <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: '10px', padding: '1rem', textAlign: 'center' }}>
               <div style={{ fontSize: '1.75rem', fontWeight: '700', color: '#ef4444' }}>{lowMatch}</div>
               <div style={{ fontSize: '0.8125rem', color: '#ef4444', fontWeight: '500' }}>Low Match</div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Below {rejectThreshold}%</div>
@@ -380,7 +452,6 @@ export default function Applicants() {
             {selectedIds.length} applicant{selectedIds.length !== 1 ? 's' : ''} selected
           </span>
           <div style={{ display: 'flex', gap: '0.625rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            {/* Bulk status change */}
             <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}>
               <select className="input" value={bulkStatus} onChange={e => setBulkStatus(e.target.value)}
                 style={{ padding: '0.375rem 0.625rem', fontSize: '0.8125rem', width: 'auto' }}>
@@ -392,17 +463,14 @@ export default function Applicants() {
                 {bulkProcessing ? <span className="spinner" /> : 'Apply'}
               </button>
             </div>
-            {/* Bulk email */}
             <button onClick={() => setShowBulkEmailModal(true)} className="btn-secondary"
               style={{ padding: '0.375rem 0.75rem', fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
               <Mail size={14} /> Send Email
             </button>
-            {/* Bulk delete */}
             <button onClick={handleBulkDelete} disabled={bulkProcessing}
               style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: '6px', padding: '0.375rem 0.75rem', fontSize: '0.8125rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
               <Trash2 size={14} /> Delete
             </button>
-            {/* Clear selection */}
             <button onClick={() => setSelectedIds([])} className="btn-secondary"
               style={{ padding: '0.375rem 0.75rem', fontSize: '0.8125rem' }}>
               Clear
@@ -463,8 +531,6 @@ export default function Applicants() {
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
-
-            {/* Location */}
             <div>
               <label className="label">Candidate Location</label>
               <select className="input" value={locationFilter} onChange={e => setLocationFilter(e.target.value)}>
@@ -474,8 +540,6 @@ export default function Applicants() {
                 ))}
               </select>
             </div>
-
-            {/* Source */}
             <div>
               <label className="label">Source</label>
               <select className="input" value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}>
@@ -483,8 +547,6 @@ export default function Applicants() {
                 {uniqueSources.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-
-            {/* Application Date */}
             <div>
               <label className="label">Application Date</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
@@ -501,8 +563,6 @@ export default function Applicants() {
                 ))}
               </div>
             </div>
-
-            {/* Years of Experience */}
             <div>
               <label className="label">Years of Experience</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
@@ -521,8 +581,6 @@ export default function Applicants() {
                 ))}
               </div>
             </div>
-
-            {/* Match Score Range */}
             <div style={{ gridColumn: 'span 2' }}>
               <label className="label">Match Score Range: <strong style={{ color: 'var(--blue-400)' }}>{minScoreFilter}% — {maxScoreFilter}%</strong></label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -532,10 +590,8 @@ export default function Applicants() {
                 <input type="range" min="0" max="100" step="5" value={maxScoreFilter} onChange={e => setMaxScoreFilter(Number(e.target.value))} style={{ flex: 1, accentColor: 'var(--blue-500)' }} />
               </div>
             </div>
-
           </div>
 
-          {/* Results count */}
           <div style={{ marginTop: '1rem', paddingTop: '0.875rem', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
               <strong style={{ color: 'var(--text-primary)' }}>{filtered.length}</strong> candidate{filtered.length !== 1 ? 's' : ''} match your filters
@@ -580,14 +636,14 @@ export default function Applicants() {
                       style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: 'var(--blue-500)' }} />
                   </th>
                   <th style={{ whiteSpace: 'nowrap' }}>Applicant</th>
-<th style={{ whiteSpace: 'nowrap' }}>Applied For</th>
-<th style={{ whiteSpace: 'nowrap' }}>Skills</th>
-<th style={{ whiteSpace: 'nowrap' }}>Experience</th>
-<th style={{ whiteSpace: 'nowrap' }}>Match Score</th>
-<th style={{ whiteSpace: 'nowrap' }}>Stage</th>
-<th style={{ whiteSpace: 'nowrap' }}>Source</th>
-<th style={{ whiteSpace: 'nowrap' }}>Applied</th>
-<th style={{ whiteSpace: 'nowrap' }}>Actions</th>
+                  <th style={{ whiteSpace: 'nowrap' }}>Applied For</th>
+                  <th style={{ whiteSpace: 'nowrap' }}>Skills</th>
+                  <th style={{ whiteSpace: 'nowrap' }}>Experience</th>
+                  <th style={{ whiteSpace: 'nowrap' }}>Match Score</th>
+                  <th style={{ whiteSpace: 'nowrap' }}>Stage</th>
+                  <th style={{ whiteSpace: 'nowrap' }}>Source</th>
+                  <th style={{ whiteSpace: 'nowrap' }}>Applied</th>
+                  <th style={{ whiteSpace: 'nowrap' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -688,7 +744,6 @@ export default function Applicants() {
               <button onClick={() => setShowBulkEmailModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '1.25rem' }}>×</button>
             </div>
             <div style={{ padding: '1.5rem' }}>
-              {/* Template selector */}
               <div className="form-group">
                 <label className="label">Use Template</label>
                 <select className="input" onChange={e => {
