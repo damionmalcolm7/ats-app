@@ -36,7 +36,7 @@ const emptyForm: any = {
   title: '', department: '', location: '', location_type: 'hybrid',
   employment_type: 'full-time', salary_min: '', salary_max: '',
   description: '', required_skills: [] as string[], experience_level: 'mid',
-  deadline: '', status: 'draft'
+  required_education: 'none', deadline: '', status: 'draft'
 }
 
 export default function JobForm({ job, onClose, onSuccess }: Props) {
@@ -54,8 +54,8 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
         location_type: job.location_type, employment_type: job.employment_type,
         salary_min: job.salary_min?.toString() || '', salary_max: job.salary_max?.toString() || '',
         description: job.description, required_skills: job.required_skills || [],
-        experience_level: job.experience_level, deadline: job.deadline?.split('T')[0] || '',
-        status: job.status
+        experience_level: job.experience_level, required_education: job.required_education || 'none',
+        deadline: job.deadline?.split('T')[0] || '', status: job.status
       })
       // Load existing questions
       supabase.from('job_questions').select('*').eq('job_id', job.id).order('order_index').then(({ data }) => {
@@ -213,7 +213,7 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
                     <option value="temporary">Temporary</option>
                   </select>
                 </div>
-                <div className="form-group">
+               <div className="form-group">
                   <label className="label">Experience Level</label>
                   <select className="input" value={form.experience_level} onChange={e => setForm({ ...form, experience_level: e.target.value })}>
                     <option value="entry">Entry</option>
@@ -225,6 +225,17 @@ export default function JobForm({ job, onClose, onSuccess }: Props) {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group">
+                  <label className="label">Minimum Education Required</label>
+                  <select className="input" value={form.required_education} onChange={e => setForm({ ...form, required_education: e.target.value })}>
+                    <option value="none">No Requirement</option>
+                    <option value="high_school">High School / CSEC</option>
+                    <option value="associate">Associate Degree</option>
+                    <option value="bachelor">Bachelor's Degree</option>
+                    <option value="master">Master's Degree</option>
+                    <option value="phd">PhD</option>
+                  </select>
+                </div>
                 <div className="form-group">
                   <label className="label">Min Salary (JMD)</label>
                   <input className="input" type="number" value={form.salary_min} onChange={e => setForm({ ...form, salary_min: e.target.value })} placeholder="e.g. 500000" />
