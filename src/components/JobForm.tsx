@@ -20,6 +20,7 @@ interface Job {
   description: string
   required_skills: string[]
   experience_level: 'entry' | 'mid' | 'senior' | 'lead'
+  required_education?: 'none' | 'high_school' | 'associate' | 'bachelor' | 'master' | 'phd'
   deadline?: string
   status: 'draft' | 'active' | 'paused' | 'closed'
   created_by: string
