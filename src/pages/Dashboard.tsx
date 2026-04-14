@@ -60,7 +60,7 @@ const [now, setNow] = useState(new Date())
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: 'var(--navy-800)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.625rem 1rem' }}>
-          <Clock size={15} color="var(--blue-400)" />
+          <Clock size={20} color="var(--blue-400)" />
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary)', letterSpacing: '0.03em' }}>{formattedTime}</div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{formattedDate}</div>
