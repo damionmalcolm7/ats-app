@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { Briefcase, Users, Calendar, Send, Clock, TrendingUp } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from 'recharts'
+import { useState, useEffect } from 'react'
 
 export default function Dashboard() {
   const { profile } = useAuth()
@@ -40,13 +41,31 @@ export default function Dashboard() {
 
   const tooltipStyle = { background: 'var(--navy-800)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text-primary)' }
 
+const [now, setNow] = useState(new Date())
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const formattedDate = now.toLocaleDateString('en-JM', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  const formattedTime = now.toLocaleTimeString('en-JM', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+
   return (
     <div>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Dashboard</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-          Welcome back, {profile?.full_name}. Here's your hiring overview.
-        </p>
+      <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: '700' }}>Dashboard</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+            Welcome back, {profile?.full_name}. Here's your hiring overview.
+          </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', background: 'var(--navy-800)', border: '1px solid var(--border)', borderRadius: '10px', padding: '0.625rem 1rem' }}>
+          <Clock size={15} color="var(--blue-400)" />
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--text-primary)', letterSpacing: '0.03em' }}>{formattedTime}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{formattedDate}</div>
+          </div>
+        </div>
       </div>
 
       {/* Stat cards */}
