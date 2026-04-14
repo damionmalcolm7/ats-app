@@ -212,8 +212,6 @@ export default function JobDetail() {
         resumeUrl = publicUrl
       }
 
-      // Check if applicant already exists by email
-      // Check if applicant already exists
       let applicantId: string | undefined
 
       const { data: existingProfiles } = await supabase
@@ -223,11 +221,9 @@ export default function JobDetail() {
         .limit(1)
 
       if (existingProfiles && existingProfiles.length > 0) {
-  // Existing applicant — reuse their account
-  applicantId = existingProfiles[0].user_id
-  setIsNewApplicant(false)
-} else {
-        // New applicant — create account
+        applicantId = existingProfiles[0].user_id
+        setIsNewApplicant(false)
+      } else {
         const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email: form.email,
           password: Math.random().toString(36).slice(-10) + 'A1!',
@@ -239,13 +235,12 @@ export default function JobDetail() {
 
       if (!applicantId) throw new Error('Could not create applicant account')
 
-     // Only create profile for new applicants
-if (existingProfiles && existingProfiles.length === 0) {
-  await supabase.from('profiles').upsert(
-    { user_id: applicantId, full_name: form.full_name, email: form.email, role: 'applicant' },
-    { onConflict: 'user_id' }
-  )
-}
+      if (existingProfiles && existingProfiles.length === 0) {
+        await supabase.from('profiles').upsert(
+          { user_id: applicantId, full_name: form.full_name, email: form.email, role: 'applicant' },
+          { onConflict: 'user_id' }
+        )
+      }
 
       console.log('Inserting application with applicantId:', applicantId, 'job_id:', id)
       const { data: appData, error: appError } = await supabase.from('applications').insert({
@@ -253,7 +248,7 @@ if (existingProfiles && existingProfiles.length === 0) {
       }).select().single()
       if (appError) throw appError
 
-     // Match score based on experience, education and certifications
+      // Match score based on experience, education level and certifications
       let scorePoints = 0
       let totalPoints = 0
 
@@ -267,13 +262,25 @@ if (existingProfiles && existingProfiles.length === 0) {
         else if (applicantYears > 0) scorePoints += Math.round((applicantYears / requiredYears) * 50)
       }
 
-      // 2. Education / qualifications (30 points)
-      const hasEducation = education.filter(e => e.degree).length > 0
-      totalPoints += 30
-      if (hasEducation) scorePoints += 30
+      // 2. Education level vs job requirement (30 points)
+      const eduRank: Record<string, number> = { none: 0, high_school: 1, associate: 2, bachelor: 3, master: 4, phd: 5 }
+      const requiredEdu = job?.required_education || 'none'
+      const requiredEduRank = eduRank[requiredEdu] || 0
+      if (requiredEduRank > 0) {
+        totalPoints += 30
+        const degreeText = education.filter(e => e.degree).map(e => e.degree.toLowerCase()).join(' ')
+        const applicantEduRank = degreeText.includes('phd') || degreeText.includes('doctor') ? 5
+          : degreeText.includes('master') || degreeText.includes('msc') || degreeText.includes('mba') ? 4
+          : degreeText.includes('bachelor') || degreeText.includes('bsc') || degreeText.includes('ba ') || degreeText.includes('b.sc') || degreeText.includes('b.a') ? 3
+          : degreeText.includes('associate') ? 2
+          : degreeText.includes('diploma') || degreeText.includes('csec') || degreeText.includes('high school') ? 1
+          : 0
+        if (applicantEduRank >= requiredEduRank) scorePoints += 30
+        else if (applicantEduRank > 0) scorePoints += Math.round((applicantEduRank / requiredEduRank) * 30)
+      }
 
       // 3. Certifications detected in work history or education (20 points)
-      const certKeywords = ['certif', 'diploma', 'license', 'accredit', 'professional', 'chartered', 'associate', 'fellow']
+      const certKeywords = ['certif', 'license', 'accredit', 'professional', 'chartered', 'fellow']
       const allText = [
         ...education.map(e => `${e.degree} ${e.institution}`),
         ...workHistory.map(w => `${w.title} ${w.company}`)
@@ -307,28 +314,26 @@ if (existingProfiles && existingProfiles.length === 0) {
       })
       if (detailsError) throw detailsError
 
-if (existingProfiles && existingProfiles.length === 0) {
-  // New applicant — send portal setup email
-  try {
-    await supabase.auth.resetPasswordForEmail(form.email, {
-      redirectTo: `${window.location.origin}/reset-password`
-    })
-  } catch (e) {}
-} else {
-  // Existing applicant — send application confirmation email
-  try {
-    await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
-      body: JSON.stringify({
-        to: form.email,
-        subject: `Application Received — ${job?.title} at ${settings?.company_name || 'National Housing Trust'}`,
-        body: `Dear ${form.full_name},\n\nThank you for applying for the ${job?.title} position at ${settings?.company_name || 'National Housing Trust'}. Your application has been received and is currently under review.\n\nYou can log into your applicant portal to track your application status at any time.\n\nPortal: ${window.location.origin}/portal\n\nBest regards,\n${settings?.sender_name || 'HR Team'}`,
-        application_id: appData.id
-      })
-    })
-  } catch (e) {}
-}
+      if (existingProfiles && existingProfiles.length === 0) {
+        try {
+          await supabase.auth.resetPasswordForEmail(form.email, {
+            redirectTo: `${window.location.origin}/reset-password`
+          })
+        } catch (e) {}
+      } else {
+        try {
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` },
+            body: JSON.stringify({
+              to: form.email,
+              subject: `Application Received — ${job?.title} at ${settings?.company_name || 'National Housing Trust'}`,
+              body: `Dear ${form.full_name},\n\nThank you for applying for the ${job?.title} position at ${settings?.company_name || 'National Housing Trust'}. Your application has been received and is currently under review.\n\nYou can log into your applicant portal to track your application status at any time.\n\nPortal: ${window.location.origin}/portal\n\nBest regards,\n${settings?.sender_name || 'HR Team'}`,
+              application_id: appData.id
+            })
+          })
+        } catch (e) {}
+      }
 
       await notifyHRTeam({
         type: 'new_application',
@@ -365,11 +370,11 @@ if (existingProfiles && existingProfiles.length === 0) {
             Next Steps
           </div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.7, margin: 0 }}>
-  {isNewApplicant
-    ? <>A confirmation has been sent to <strong style={{ color: 'var(--text-primary)' }}>{form.email}</strong>. Please check your inbox for a link to set up your applicant portal where you can track your application status.</>
-    : <>Your application has been received. Log into your <strong style={{ color: 'var(--text-primary)' }}>applicant portal</strong> to track your application status.</>
-  }
-</p>
+            {isNewApplicant
+              ? <>A confirmation has been sent to <strong style={{ color: 'var(--text-primary)' }}>{form.email}</strong>. Please check your inbox for a link to set up your applicant portal where you can track your application status.</>
+              : <>Your application has been received. Log into your <strong style={{ color: 'var(--text-primary)' }}>applicant portal</strong> to track your application status.</>
+            }
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
           <button className="btn-secondary" onClick={() => navigate('/jobs')}>View More Jobs</button>
@@ -401,12 +406,12 @@ if (existingProfiles && existingProfiles.length === 0) {
                     {(job.salary_min || job.salary_max) && <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}><DollarSign size={15} />{job.salary_min?.toLocaleString()} - {job.salary_max?.toLocaleString()}</span>}
                   </div>
                   {job.deadline && new Date(job.deadline) < new Date() ? (
-  <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '0.75rem 1.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', fontSize: '0.9375rem', fontWeight: '500' }}>
-    ⏰ Applications closed — deadline was {new Date(job.deadline).toLocaleDateString()}
-  </div>
-) : (
-  <button className="btn-primary" onClick={() => setShowForm(true)} style={{ padding: '0.75rem 2rem', fontSize: '1rem' }}>Apply for This Position</button>
-)}
+                    <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '0.75rem 1.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', fontSize: '0.9375rem', fontWeight: '500' }}>
+                      ⏰ Applications closed — deadline was {new Date(job.deadline).toLocaleDateString()}
+                    </div>
+                  ) : (
+                    <button className="btn-primary" onClick={() => setShowForm(true)} style={{ padding: '0.75rem 2rem', fontSize: '1rem' }}>Apply for This Position</button>
+                  )}
                 </div>
                 <div className="card" style={{ marginBottom: '1.25rem' }}>
                   <div className="job-description" dangerouslySetInnerHTML={{ __html: job.description }} />
