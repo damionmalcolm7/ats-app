@@ -147,17 +147,17 @@ export default function Applicants() {
           else if (applicantEduRank > 0) scorePoints += Math.round((applicantEduRank / requiredEduRank) * 30)
         }
 
-        // 3. Certifications (20 points)
-        const certKeywords = ['certif', 'license', 'accredit', 'professional', 'chartered', 'fellow']
+       // 3. Certifications — bonus points (not part of total, pushes score above base)
+        const certKeywords = ['certif', 'license', 'accredit', 'specialist', 'chartered', 'fellow']
         const allText = [
           ...(details.education || []).map((e: any) => `${e.degree} ${e.institution}`),
           ...(details.work_history || []).map((w: any) => `${w.title} ${w.company}`)
         ].join(' ').toLowerCase()
         const hasCerts = certKeywords.some((kw: string) => allText.includes(kw))
-        totalPoints += 20
-        if (hasCerts) scorePoints += 20
 
-        const matchScore = totalPoints > 0 ? Math.round((scorePoints / totalPoints) * 100) : 0
+        const baseScore = totalPoints > 0 ? (scorePoints / totalPoints) * 100 : 0
+        const certBonus = hasCerts ? (1 - scorePoints / totalPoints) * 20 : 0
+        const matchScore = totalPoints > 0 ? Math.min(100, Math.round(baseScore + certBonus)) : 0
         await supabase.from('applications').update({ match_score: matchScore }).eq('id', app.id)
         success++
       }
