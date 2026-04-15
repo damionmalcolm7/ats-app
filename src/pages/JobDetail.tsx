@@ -248,7 +248,7 @@ export default function JobDetail() {
       }).select().single()
       if (appError) throw appError
 
-      // Match score based on experience, education level and certifications
+// Match score based on experience, education level and certifications
       let scorePoints = 0
       let totalPoints = 0
 
@@ -279,17 +279,18 @@ export default function JobDetail() {
         else if (applicantEduRank > 0) scorePoints += Math.round((applicantEduRank / requiredEduRank) * 30)
       }
 
-      // 3. Certifications detected in work history or education (20 points)
-      const certKeywords = ['certif', 'license', 'accredit', 'professional', 'chartered', 'fellow']
+      // 3. Certifications — bonus points (not part of total, pushes score above base)
+      const certKeywords = ['certif', 'license', 'accredit', 'specialist', 'chartered', 'fellow']
       const allText = [
         ...education.map(e => `${e.degree} ${e.institution}`),
         ...workHistory.map(w => `${w.title} ${w.company}`)
       ].join(' ').toLowerCase()
       const hasCerts = certKeywords.some(kw => allText.includes(kw))
-      totalPoints += 20
-      if (hasCerts) scorePoints += 20
 
-      const matchScore = totalPoints > 0 ? Math.round((scorePoints / totalPoints) * 100) : 0
+      // Base score out of total, then apply cert bonus
+      const baseScore = totalPoints > 0 ? (scorePoints / totalPoints) * 100 : 0
+      const certBonus = hasCerts ? (1 - scorePoints / totalPoints) * 20 : 0
+      const matchScore = totalPoints > 0 ? Math.min(100, Math.round(baseScore + certBonus)) : 0
 
       await supabase.from('applications').update({ match_score: matchScore }).eq('id', appData.id)
 
