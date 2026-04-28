@@ -213,7 +213,7 @@ export default function Pipeline() {
             {app.job?.title}
           </div>
         </div>
-       <button onClick={() => setQuickActionApp(app)}
+      <button onClick={() => setQuickActionApp(app)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--blue-400)', padding: '0.125rem', flexShrink: 0 }}>
           <Eye size={mobile ? 15 : 12} />
         </button>
@@ -252,11 +252,38 @@ export default function Pipeline() {
         </div>
       )}
 
-      {!mobile && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{new Date(app.created_at).toLocaleDateString()}</span>
-        </div>
-      )}
+    {!mobile && (() => {
+        const nextStageMap: Record<string, string | null> = {
+          applied: 'screening', screening: 'interview', interview: 'offer',
+          offer: 'hired', hired: null, rejected: null
+        }
+        const nextStageId = nextStageMap[app.status]
+        const nextStage = nextStageId ? STAGES.find(s => s.id === nextStageId) : null
+        const isTerminal = app.status === 'hired' || app.status === 'rejected'
+        return (
+          <div style={{ marginTop: '0.375rem' }}>
+            <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>{new Date(app.created_at).toLocaleDateString()}</div>
+            <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+              <button onClick={() => setQuickActionApp(app)}
+                style={{ fontSize: '0.65rem', padding: '0.2rem 0.5rem', background: 'var(--navy-700)', border: '1px solid var(--border)', color: 'var(--text-secondary)', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}>
+                View
+              </button>
+              {nextStage && (
+                <button onClick={() => moveCandidate(app.id, nextStage.id)}
+                  style={{ fontSize: '0.65rem', padding: '0.2rem 0.5rem', background: nextStage.bg, border: `1px solid ${nextStage.border}`, color: nextStage.color, borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}>
+                  → {nextStage.label}
+                </button>
+              )}
+              {!isTerminal && (
+                <button onClick={() => moveCandidate(app.id, 'rejected')}
+                  style={{ fontSize: '0.65rem', padding: '0.2rem 0.5rem', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}>
+                  Reject
+                </button>
+              )}
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 
