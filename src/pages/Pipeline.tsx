@@ -213,10 +213,12 @@ export default function Pipeline() {
             {app.job?.title}
           </div>
         </div>
-      <button onClick={() => setQuickActionApp(app)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--blue-400)', padding: '0.125rem', flexShrink: 0 }}>
-          <Eye size={mobile ? 15 : 12} />
-        </button>
+      {mobile && (
+          <button onClick={() => setQuickActionApp(app)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--blue-400)', padding: '0.125rem', flexShrink: 0 }}>
+            <Eye size={15} />
+          </button>
+        )}
       </div>
 
       {app.match_score != null && (
