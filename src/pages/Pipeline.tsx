@@ -30,6 +30,7 @@ export default function Pipeline() {
     applied: true, screening: true, interview: true, assessment: true,
     offer: true, hired: true, rejected: false
   })
+  const [quickActionApp, setQuickActionApp] = useState<any | null>(null)
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.screen.width < 900)
@@ -146,6 +147,12 @@ export default function Pipeline() {
     setExpandedStages(prev => ({ ...prev, [stageId]: !prev[stageId] }))
   }
 
+  function getDaysInStage(app: any) {
+    const updated = new Date(app.updated_at || app.created_at)
+    const now = new Date()
+    return Math.floor((now.getTime() - updated.getTime()) / (1000 * 60 * 60 * 24))
+  }
+
   function moveCandidate(appId: string, newStatus: string) {
     const app = applications.find(a => a.id === appId)
     if (!app) return
@@ -206,7 +213,7 @@ export default function Pipeline() {
             {app.job?.title}
           </div>
         </div>
-        <button onClick={() => navigate(`/dashboard/applicants/${app.id}`)}
+       <button onClick={() => setQuickActionApp(app)}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--blue-400)', padding: '0.125rem', flexShrink: 0 }}>
           <Eye size={mobile ? 15 : 12} />
         </button>
@@ -347,11 +354,74 @@ export default function Pipeline() {
         </div>
       )}
 
-      {!isMobile && (
+{!isMobile && (
         <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', flexShrink: 0 }}>
           💡 Drag and drop cards to move candidates · Scroll right to see all stages · Status emails sent automatically
         </div>
       )}
+
+      {/* Quick Action Modal */}
+      {quickActionApp && (() => {
+        const app = quickActionApp
+        const currentStage = STAGES.find(s => s.id === app.status)
+        const otherStages = STAGES.filter(s => s.id !== app.status)
+        const days = getDaysInStage(app)
+        return (
+          <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setQuickActionApp(null)}>
+            <div className="modal" style={{ maxWidth: '480px', padding: '1.5rem' }}>
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: currentStage?.color || 'var(--blue-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: '700', color: 'white', flexShrink: 0 }}>
+                    {(app.applicant_details?.full_name || 'U')[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: '700', fontSize: '1.0625rem' }}>{app.applicant_details?.full_name || 'Unknown'}</div>
+                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{app.job?.title || '—'}</div>
+                  </div>
+                </div>
+                <button onClick={() => setQuickActionApp(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '1.25rem', lineHeight: 1 }}>×</button>
+              </div>
+
+              {/* Stage & days */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '1.25rem' }}>
+                <span style={{ background: currentStage?.bg, border: `1px solid ${currentStage?.border}`, color: currentStage?.color, borderRadius: '6px', padding: '0.25rem 0.75rem', fontSize: '0.8125rem', fontWeight: '600' }}>
+                  {currentStage?.label}
+                </span>
+                <span style={{ background: 'var(--navy-700)', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.25rem 0.75rem', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                  {days === 0 ? 'Today' : `${days}d in stage`}
+                </span>
+              </div>
+
+              {/* Move buttons */}
+              <div style={{ marginBottom: '1.25rem' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.625rem' }}>Move to</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {otherStages.map(s => (
+                    <button key={s.id} onClick={() => {
+                      moveCandidate(app.id, s.id)
+                      setQuickActionApp(null)
+                    }}
+                      style={{ background: s.bg, border: `1px solid ${s.border}`, color: s.color, borderRadius: '7px', padding: '0.4rem 0.875rem', fontSize: '0.8125rem', fontWeight: '600', cursor: 'pointer', transition: 'opacity 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
+                      onMouseLeave={e => (e.currentTarget.style.opacity = '1')}>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* View full profile */}
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                <button onClick={() => { setQuickActionApp(null); navigate(`/dashboard/applicants/${app.id}`) }}
+                  className="btn-primary" style={{ fontSize: '0.875rem', padding: '0.5rem 1.25rem' }}>
+                  View Full Profile
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
