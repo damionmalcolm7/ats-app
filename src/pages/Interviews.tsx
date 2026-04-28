@@ -154,7 +154,7 @@ function InterviewCard({ iv, onUpdate, onDelete, navigate }: any) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span className={`badge ${iv.status === 'scheduled' ? 'badge-blue' : iv.status === 'completed' ? 'badge-green' : 'badge-red'}`} style={{ textTransform: 'capitalize' }}>{iv.status}</span>
           {iv.status === 'scheduled' && <button onClick={() => onUpdate({ id: iv.id, status: 'completed' })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#10b981' }} title="Mark completed"><CheckCircle size={16} /></button>}
-          <button onClick={() => { if (confirm('Delete interview?')) onDelete(iv.id) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}><Trash2 size={15} /></button>
+          {iv.status === 'cancelled' && <button onClick={() => { if (confirm('Delete this cancelled interview?')) onDelete(iv.id) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--danger)' }} title="Delete interview"><Trash2 size={15} /></button>}
         </div>
       </div>
     </div>
